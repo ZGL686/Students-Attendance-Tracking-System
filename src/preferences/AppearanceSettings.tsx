@@ -2,11 +2,13 @@ import { Check, Monitor, Moon, Sun, MousePointer2, RotateCcw, Sparkles } from 'l
 import { Button, ChoiceCards, IconButton } from '../components/ui';
 import { usePreferences } from './PreferencesProvider';
 import { defaultPreferences, fontOptions, themeOptions } from './model';
+import { ThemeGallery } from '../features/themes/ThemeGallery';
 
 export function AppearanceSettings() {
   const { preferences, setPreferences, storageError } = usePreferences();
   return (
     <div className="appearance-settings">
+      <ThemeGallery />
       <section className="appearance-section">
         <div className="appearance-heading">
           <div>
@@ -53,6 +55,8 @@ export function AppearanceSettings() {
             onClick={() =>
               setPreferences({
                 theme: defaultPreferences.theme,
+                themePackId: defaultPreferences.themePackId,
+                themePackVersion: defaultPreferences.themePackVersion,
                 font: defaultPreferences.font,
                 fontSize: defaultPreferences.fontSize,
                 motion: defaultPreferences.motion,

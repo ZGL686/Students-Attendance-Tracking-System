@@ -3,7 +3,9 @@ import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { Preferences } from './model';
-import { defaultPreferences, parsePreferences, preferenceKey } from './model';
+import { defaultPreferences, legacyPreferenceKey, parsePreferences, preferenceKey } from './model';
+import { findBuiltinTheme } from '../features/themes/builtins';
+import { applyThemePack } from '../features/themes/runtime';
 
 function apply(p: Preferences) {
   const root = document.documentElement;
@@ -16,11 +18,16 @@ function apply(p: Preferences) {
         : 'light'
       : p.theme;
   root.style.setProperty('--base-font-size', `${p.fontSize}px`);
+  applyThemePack(findBuiltinTheme(p.themePackId), root.dataset.theme === 'dark');
 }
 export function initializePreferences(): Preferences {
   let preferences = { ...defaultPreferences };
   try {
-    preferences = parsePreferences(localStorage.getItem(preferenceKey));
+    const current = localStorage.getItem(preferenceKey);
+    const legacy = current === null ? localStorage.getItem(legacyPreferenceKey) : null;
+    preferences = parsePreferences(current ?? legacy);
+    if (current === null && legacy !== null)
+      localStorage.setItem(preferenceKey, JSON.stringify(preferences));
   } catch {
     /* Session defaults remain usable when storage is unavailable. */
   }

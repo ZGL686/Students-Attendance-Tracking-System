@@ -1,0 +1,411 @@
+.pack-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0 18px;
+}
+.pack-filter button {
+  border-radius: 20px;
+  padding: 6px 15px;
+  color: var(--text-secondary);
+  background: var(--surface-soft);
+}
+.pack-filter button[aria-pressed='true'] {
+  background: var(--selected);
+  color: var(--blue);
+  border-color: var(--blue);
+}
+.pack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.pack-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  text-align: left;
+  border-radius: 12px;
+  background: var(--surface);
+  white-space: normal;
+}
+.pack-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 5px 18px #00000012;
+}
+.pack-card[aria-pressed='true'] {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px var(--blue);
+}
+.pack-count {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.8571rem;
+}
+.pack-card-image {
+  width: 100%;
+  height: 136px;
+  object-fit: cover;
+  background: var(--surface-soft);
+}
+.classic-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  background: linear-gradient(130deg, var(--sidebar), var(--surface));
+}
+.pack-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 15px;
+}
+.pack-card-copy strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pack-card-copy strong svg {
+  color: var(--blue);
+}
+.pack-card-copy small {
+  color: var(--muted);
+}
+.pack-preview-toggle > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pack-preview-toggle,
+.pack-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px 0;
+}
+.pack-preview-footer {
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+.pack-preview {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  min-height: 270px;
+  overflow: hidden;
+  border-radius: var(--pack-radius, 8px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.pack-preview-backdrop {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.3;
+  z-index: -1;
+}
+.pack-preview:not(.decorated) {
+  --surface: #ffffff;
+  --sidebar: #f7f7f5;
+  --text: #37352f;
+  --text-secondary: #666560;
+  --border: #e3e3e1;
+  --line: #e9e9e7;
+  --blue: #2383e2;
+  --on-blue: #ffffff;
+}
+.pack-preview:not(.decorated)[data-preview-mode='dark'] {
+  --surface: #202124;
+  --sidebar: #191a1d;
+  --text: #ecebe7;
+  --text-secondary: #c7c6c1;
+  --border: #45464b;
+  --line: #38393d;
+  --blue: #64adf5;
+  --on-blue: #152435;
+}
+.pack-preview-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 16px;
+  background: color-mix(in srgb, var(--sidebar) 93%, transparent);
+  border-right: 1px solid var(--line);
+  font-size: 0.8571rem;
+}
+.pack-preview-sidebar strong {
+  font-size: 1.1429rem;
+  margin-bottom: 12px;
+}
+.pack-preview-sidebar span:nth-child(2) {
+  color: var(--blue);
+}
+.pack-preview-main {
+  padding: 32px 28px;
+}
+.pack-preview-eyebrow {
+  font-size: 0.7857rem;
+  color: var(--text-secondary);
+}
+.pack-preview-main h4 {
+  font-size: 1.5rem;
+  margin-top: 8px;
+}
+.pack-preview-cells {
+  display: flex;
+  gap: 10px;
+  margin: 22px 0 18px;
+}
+.pack-preview-cells > span {
+  flex: 1;
+  font-size: 0.8571rem;
+  line-height: 1.9;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--pack-radius, 5px);
+}
+.pack-preview-action {
+  display: inline-block;
+  padding: 7px 15px;
+  background: var(--blue);
+  color: var(--on-blue);
+  border-radius: var(--pack-radius, 5px);
+  font-size: 0.8571rem;
+}
+/* Every theme uses the same content layout and semantic status colors. */
+:root[data-theme-pack]:not([data-theme-pack='classic']) .app-main {
+  position: relative;
+  isolation: isolate;
+  background: var(--surface);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .app-main::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--pack-image) center / cover no-repeat;
+  opacity: var(--pack-opacity);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .sidebar {
+  background: linear-gradient(160deg, var(--sidebar), var(--surface-soft));
+  border-right-color: var(--border);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .sidebar nav button,
+:root[data-theme-pack]:not([data-theme-pack='classic']) .sidebar-bottom > button {
+  border-radius: var(--pack-radius);
+  min-height: 40px;
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .sidebar nav button.active,
+:root[data-theme-pack]:not([data-theme-pack='classic']) .sidebar-bottom > button.active {
+  color: var(--blue);
+  background: var(--selected);
+  box-shadow: inset 3px 0 var(--blue);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .topbar {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border-bottom: 1px solid var(--line);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .page-heading {
+  position: relative;
+  isolation: isolate;
+  padding: 28px;
+  min-height: 135px;
+  border: 1px solid var(--line);
+  border-radius: var(--pack-radius);
+  background:
+    linear-gradient(95deg, var(--surface) 25%, color-mix(in srgb, var(--surface) 65%, transparent)),
+    var(--pack-image) center 45% / cover;
+  box-shadow: 0 5px 22px #00000006;
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .page-title-icon {
+  color: var(--blue);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) .page-heading::after {
+  content: '';
+  position: absolute;
+  right: 28px;
+  bottom: 18px;
+  width: 45px;
+  height: 3px;
+  background: var(--blue);
+  opacity: 0.5;
+  border-radius: 50%;
+  z-index: -1;
+}
+:root[data-decoration='clouds'] .page-heading::after {
+  width: 55px;
+  height: 15px;
+  border-radius: 50% 50% 6px 6px;
+}
+:root[data-decoration='leaves'] .page-heading::after {
+  width: 25px;
+  height: 15px;
+  border-radius: 0 80%;
+  transform: rotate(-20deg);
+}
+:root[data-decoration='petals'] .page-heading::after {
+  width: 20px;
+  height: 20px;
+  border-radius: 75% 0 75% 25%;
+  transform: rotate(25deg);
+}
+:root[data-decoration='stars'] .page-heading::after {
+  width: 25px;
+  height: 25px;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+}
+:root[data-decoration='ink'] .page-heading::after {
+  height: 5px;
+  transform: rotate(-5deg);
+}
+:root[data-decoration='jade'] .page-heading::after {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transform: rotate(45deg);
+}
+:root[data-decoration='waves'] .page-heading::after {
+  width: 52px;
+  height: 16px;
+  background: none;
+  border-top: 2px solid var(--blue);
+  border-bottom: 2px solid var(--blue);
+  border-radius: 50%;
+  transform: rotate(-8deg);
+}
+:root[data-decoration='sun'] .page-heading::after {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--blue) 18%, transparent);
+}
+:root[data-decoration='snow'] .page-heading::after {
+  width: 28px;
+  height: 28px;
+  clip-path: polygon(
+    45% 0,
+    55% 0,
+    55% 35%,
+    85% 17%,
+    90% 25%,
+    60% 45%,
+    100% 45%,
+    100% 55%,
+    60% 55%,
+    90% 75%,
+    85% 83%,
+    55% 65%,
+    55% 100%,
+    45% 100%,
+    45% 65%,
+    15% 83%,
+    10% 75%,
+    40% 55%,
+    0 55%,
+    0 45%,
+    40% 45%,
+    10% 25%,
+    15% 17%,
+    45% 35%
+  );
+}
+:root[data-decoration='neon'] .page-heading::after {
+  width: 36px;
+  height: 20px;
+  border: 2px solid var(--blue);
+  background: none;
+  border-radius: 2px;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--blue) 35%, transparent);
+  transform: skew(-18deg);
+}
+:root[data-decoration='neon'] .page-heading {
+  box-shadow:
+    inset 0 -2px var(--selected),
+    0 0 20px color-mix(in srgb, var(--blue) 8%, transparent);
+}
+:root[data-decoration='orbit'] .page-heading::after {
+  width: 42px;
+  height: 18px;
+  border: 2px solid var(--blue);
+  background: none;
+  border-radius: 50%;
+  transform: rotate(-25deg);
+}
+:root[data-decoration='moon'] .page-heading::after {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: none;
+  box-shadow: inset 8px -3px var(--blue);
+}
+:root[data-decoration='books'] .page-heading::after {
+  width: 32px;
+  height: 26px;
+  border-radius: 1px;
+  background: repeating-linear-gradient(90deg, var(--blue) 0 5px, transparent 5px 8px);
+  border-bottom: 2px solid var(--blue);
+}
+:root[data-decoration='lotus'] .page-heading::after {
+  width: 18px;
+  height: 24px;
+  border-radius: 85% 0 80% 20%;
+  transform: rotate(-45deg);
+  box-shadow:
+    -9px 4px color-mix(in srgb, var(--blue) 55%, transparent),
+    4px 9px color-mix(in srgb, var(--blue) 55%, transparent);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic'])
+  :is(
+    .attendance-context,
+    .report-card,
+    .table-container,
+    .database-table-wrap,
+    .calendar,
+    .interaction-preview
+  ) {
+  background: var(--surface);
+  border-radius: var(--pack-radius);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) :is(.modal, .drawer, .popover) {
+  border-color: var(--border);
+  border-radius: var(--pack-radius);
+}
+:root[data-theme-pack]:not([data-theme-pack='classic']) button.primary {
+  border-radius: var(--pack-radius);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--blue) 18%, transparent);
+}
+@media (max-width: 1000px) {
+  .pack-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 650px) {
+  .pack-grid {
+    grid-template-columns: 1fr;
+  }
+  .pack-preview {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+  .pack-preview-main {
+    padding: 22px 14px;
+  }
+  .pack-preview-cells {
+    flex-direction: column;
+  }
+  :root[data-theme-pack]:not([data-theme-pack='classic']) .page-heading {
+    padding: 20px;
+  }
+}

@@ -174,9 +174,11 @@ test('shared feedback covers hover, press, focus and reduced motion', async ({ p
 });
 
 test('invalid or unavailable preference storage never blocks attendance', async ({ page }) => {
-  await page.evaluate(() => localStorage.setItem('ludian.preferences.v1', '{invalid'));
+  await page.evaluate(() => localStorage.setItem('ludian.preferences.v2', '{invalid'));
   await page.reload();
   await expect(page.getByRole('heading', { name: '课程表', exact: true })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-font', 'rounded');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-pack', 'classic');
   await page.evaluate(() => {
     Storage.prototype.setItem = () => {
       throw new DOMException('test blocked', 'QuotaExceededError');

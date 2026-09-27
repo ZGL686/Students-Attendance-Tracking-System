@@ -10,12 +10,16 @@ import {
   Plus,
   Settings2,
   UserRound,
+  Upload,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button, IconButton, Modal, PageHeading, Tag, TextLink } from './components/ui';
 import { useApp } from './context';
 import type { Course, Session } from './model';
-import { coursesOn, formatWeeks, parseWeeks, uid, weekDates, weekOf } from './model';
+import { coursesOn, formatWeeks, weekDates, weekOf } from './model';
+import { CourseEditor } from './features/timetable/CourseEditor';
+import { ImportCourses } from './features/timetable-import/ImportCourses';
+import { coursesOverlap } from './features/timetable-import/model';
 
 const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 export function Timetable({
@@ -33,6 +37,7 @@ export function Timetable({
   const [weekPicker, setWeekPicker] = useState(false);
   const [detail, setDetail] = useState<Course | null>(null);
   const [editor, setEditor] = useState<Course | null | undefined>();
+  const [importTarget, setImportTarget] = useState<string>();
   const week = selected ?? Math.max(1, Math.min(w.totalWeeks, current));
   const dates = weekDates(w, week);
   const courses = w.courses.filter((c) => c.weeks.includes(week));
@@ -48,6 +53,10 @@ export function Timetable({
             <Button onClick={onSettings}>
               <Settings2 size={16} />
               学期设置
+            </Button>
+            <Button onClick={() => setImportTarget(w.id)}>
+              <Upload size={16} />
+              导入课程
             </Button>
             <Button className="primary" onClick={() => setEditor(null)}>
               <Plus size={16} />
@@ -311,21 +320,19 @@ export function Timetable({
       {editor !== undefined && (
         <CourseEditor
           initial={editor}
+          totalWeeks={w.totalWeeks}
           onClose={() => setEditor(undefined)}
           onSave={async (c) => {
-            const overlap = w.courses.find(
-              (x) =>
-                x.id !== c.id &&
-                x.day === c.day &&
-                x.start <= c.end &&
-                x.end >= c.start &&
-                x.weeks.some((week) => c.weeks.includes(week)),
-            );
+            const overlap = w.courses.find((x) => x.id !== c.id && coursesOverlap(x, c));
             if (overlap) {
               notify(`与“${overlap.name}”的节次和周次重叠，请调整。`, true);
               return false;
             }
             const ok = await update((w) => {
+              if (c.weeks.some((week) => week > w.totalWeeks))
+                throw new Error(`上课周次不能超过当前学期的 ${w.totalWeeks} 周。`);
+              const conflict = w.courses.find((x) => x.id !== c.id && coursesOverlap(x, c));
+              if (conflict) throw new Error(`与“${conflict.name}”的节次和周次重叠，请调整。`);
               const i = w.courses.findIndex((x) => x.id === c.id);
               if (i < 0) w.courses.push(c);
               else w.courses[i] = c;
@@ -348,152 +355,9 @@ export function Timetable({
           busy={busy}
         />
       )}
+      {importTarget && (
+        <ImportCourses targetId={importTarget} onClose={() => setImportTarget(undefined)} />
+      )}
     </>
-  );
-}
-function CourseEditor({
-  initial,
-  onClose,
-  onSave,
-  onDelete,
-  busy,
-}: {
-  initial: Course | null;
-  onClose: () => void;
-  onSave: (c: Course) => Promise<boolean>;
-  onDelete?: () => void;
-  busy: boolean;
-}) {
-  const [c, setC] = useState<Course>(
-    initial ?? {
-      id: uid(),
-      name: '',
-      teacher: '',
-      room: '',
-      day: 1,
-      start: 1,
-      end: 2,
-      weeks: parseWeeks('1-16'),
-      color: 'blue',
-    },
-  );
-  const [weeks, setWeeks] = useState(formatWeeks(c.weeks));
-  const [error, setError] = useState('');
-  const [confirm, setConfirm] = useState(false);
-  const field = (key: keyof Course, value: unknown) => setC({ ...c, [key]: value });
-  return (
-    <Modal
-      title={initial ? '编辑课程' : '添加课程'}
-      subtitle="课程调整不会修改已经登记的考勤信息。"
-      onClose={onClose}
-    >
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          try {
-            if (c.end < c.start) throw new Error('结束节次不能早于开始节次。');
-            await onSave({ ...c, name: c.name.trim(), weeks: parseWeeks(weeks) });
-          } catch (e) {
-            setError(String(e));
-          }
-        }}
-      >
-        <label>
-          课程名称
-          <input
-            required
-            maxLength={100}
-            value={c.name}
-            onChange={(e) => field('name', e.target.value)}
-          />
-        </label>
-        <div className="form-grid">
-          <label>
-            任课教师
-            <input value={c.teacher} onChange={(e) => field('teacher', e.target.value)} />
-          </label>
-          <label>
-            教室
-            <input value={c.room} onChange={(e) => field('room', e.target.value)} />
-          </label>
-        </div>
-        <div className="form-grid three">
-          <label>
-            星期
-            <select value={c.day} onChange={(e) => field('day', +e.target.value)}>
-              {days.map((d, i) => (
-                <option key={d} value={i + 1}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            开始节次
-            <input
-              type="number"
-              min={1}
-              max={10}
-              value={c.start}
-              onChange={(e) => field('start', +e.target.value)}
-            />
-          </label>
-          <label>
-            结束节次
-            <input
-              type="number"
-              min={c.start}
-              max={10}
-              value={c.end}
-              onChange={(e) => field('end', +e.target.value)}
-            />
-          </label>
-        </div>
-        <label>
-          上课周次
-          <input
-            required
-            value={weeks}
-            onChange={(e) => setWeeks(e.target.value)}
-            placeholder="例如：1-2,4-13"
-          />
-          <small>支持不连续周次，例如 1-2,4-13。</small>
-        </label>
-        <div className="color-picker">
-          {(['purple', 'blue', 'pink', 'green', 'amber', 'teal'] as const).map((color) => (
-            <Button
-              type="button"
-              aria-label={`${color}颜色`}
-              key={color}
-              className={`swatch ${color} ${c.color === color ? 'chosen' : ''}`}
-              onClick={() => field('color', color)}
-            >
-              {c.color === color && <Check size={16} />}
-            </Button>
-          ))}
-        </div>
-        {error && <p className="form-error">{error}</p>}
-        {confirm && <p className="form-error">移除后将不再出现在课表中，已有考勤记录不受影响。</p>}
-        <div className="modal-actions">
-          {onDelete && (
-            <Button
-              type="button"
-              className="danger-text"
-              disabled={busy}
-              onClick={() => (confirm ? onDelete() : setConfirm(true))}
-            >
-              {confirm ? '确认移除' : '移除课程'}
-            </Button>
-          )}
-          <span className="spacer" />
-          <Button type="button" onClick={onClose}>
-            取消
-          </Button>
-          <Button className="primary" pending={busy}>
-            保存课程
-          </Button>
-        </div>
-      </form>
-    </Modal>
   );
 }

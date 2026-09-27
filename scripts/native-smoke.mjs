@@ -6,9 +6,16 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { prepareManagementRestart, verifyManagementRestart } from './native-management.mjs';
 import { isolatedEnvironment, verifyNativeIsolation } from './native-isolation.mjs';
+import {
+  assertNativeOffline,
+  monitorNativeRequests,
+  prepareImportAndThemeRestart,
+  verifyImportAndThemeRestart,
+} from './native-import-themes.mjs';
 const root = process.cwd();
-const dataDir = path.join(root, '.local', `native-smoke-${Date.now()}`);
-await fs.mkdir(dataDir, { recursive: true });
+await fs.mkdir(path.join(root, '.local'), { recursive: true });
+const dataDir = await fs.mkdtemp(path.join(root, '.local', 'native-smoke-'));
+await assert.rejects(fs.access(path.join(dataDir, 'webview')), { code: 'ENOENT' });
 // Open a genuine v0.1 snapshot with fictional students. Never exercise the
 // user's default directory or use the embedded personal roster for test writes.
 const legacyWorkspace = {
@@ -64,6 +71,8 @@ fixture.prepare('INSERT INTO snapshots(revision,payload) VALUES(1,?)').run(legac
 fixture.close();
 const exe = path.resolve(process.argv[2] || 'src-tauri/target/release/guilu.exe');
 let child;
+const networks = [];
+const errors = [];
 async function launch() {
   child = spawn(exe, [], {
     env: {
@@ -85,17 +94,18 @@ async function launch() {
   assert(browser, 'Native WebView did not become available');
   await verifyNativeIsolation(child.pid, dataDir);
   const context = browser.contexts()[0];
+  const network = await monitorNativeRequests(context);
+  networks.push(network);
   let page = context.pages()[0];
   if (!page) page = await context.waitForEvent('page');
+  page.on('pageerror', (e) => errors.push(e.message));
   await page.getByRole('heading', { name: '课程表', exact: true }).waitFor({ timeout: 20000 });
   const location = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('data_location'));
   assert(location.startsWith(dataDir), 'Refusing test against non-isolated user data');
-  return { browser, page };
+  return { browser, page, network };
 }
 try {
-  let { browser, page } = await launch();
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
+  let { browser, page, network } = await launch();
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: '收起侧栏', exact: true }).click();
     await page.waitForFunction(
@@ -194,6 +204,7 @@ try {
   }
   await page.getByRole('button', { name: '舒适 · 15' }).click();
   await page.getByLabel('减少动态效果').check();
+  const nativeFeatures = await prepareImportAndThemeRestart(page, dataDir, network);
   await prepareManagementRestart(page);
   await page.screenshot({ path: path.join(dataDir, 'appearance-desktop.png') });
   await page.getByRole('button', { name: '收起侧栏', exact: true }).click();
@@ -208,9 +219,13 @@ try {
   await page.getByRole('button', { name: '展开侧栏', exact: true }).click();
   stored = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('load_data'));
   await verifyManagementRestart(page);
+  await verifyImportAndThemeRestart(page, nativeFeatures);
   stored = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('load_data'));
-  assert.equal(stored.revision, 11);
+  const expectedRevisions = 11 + nativeFeatures.importedWrites;
+  assert.equal(stored.revision, expectedRevisions);
   const finalData = JSON.parse(stored.payload);
+  assert.equal(finalData.workspaces[0].courses.length, 1);
+  assert.equal(finalData.workspaces[0].courses[0].name, nativeFeatures.courseName);
   assert.equal(finalData.workspaces[0].records[1].courseName, '桌面独立验收课程');
   assert.deepEqual(finalData.workspaces[0].records[0], legacyWorkspace.records[0]);
   assert.equal(finalData.workspaces[0].databases.students.cells.s1['custom:followup'], '跟进中');
@@ -220,7 +235,8 @@ try {
   );
   assert.equal(original, legacyPayload);
   const snapshots = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('list_snapshots'));
-  assert.equal(snapshots.length, 11);
+  assert.equal(snapshots.length, expectedRevisions);
+  networks.forEach((item) => assertNativeOffline(item));
   assert.deepEqual(errors, []);
   console.log(
     JSON.stringify({
@@ -236,6 +252,12 @@ try {
       sidebarRestored: true,
       preferencesPersisted: true,
       browserProfileIsolated: true,
+      freshWebViewProfile: true,
+      bundledPageImportPersisted: true,
+      offlineChineseOcr: true,
+      externalRequests: networks.flatMap((item) => [...item.external]),
+      ocrResources: nativeFeatures.ocrResources,
+      builtinThemePackPersisted: nativeFeatures.themePackId,
       revisions: snapshots.length,
       dataDir,
       exe,

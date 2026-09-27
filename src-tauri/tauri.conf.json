@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Ludian",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "identifier": "cn.guilu.attendance",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -21,13 +21,11 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost 'self'; font-src 'self'; object-src 'none'; base-uri 'self'"
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost 'self' blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'"
     }
   },
   "bundle": {
     "active": false,
-    "icon": [
-      "icons/icon.ico"
-    ]
+    "icon": ["icons/icon.ico"]
   }
 }

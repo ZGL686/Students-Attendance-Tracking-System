@@ -4,6 +4,7 @@
 @import './styles/shell.css';
 @import './styles/headings.css';
 @import './styles/timetable.css';
+@import './styles/timetable-import.css';
 @import './styles/attendance.css';
 @import './styles/reports.css';
 @import './styles/settings.css';

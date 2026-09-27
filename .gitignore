@@ -5,6 +5,7 @@ src-tauri/target/
 src-tauri/gen/
 .local/
 public/local-seed.json
+public/offline/
 playwright-report/
 test-results/
 __pycache__/

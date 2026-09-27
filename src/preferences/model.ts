@@ -22,17 +22,22 @@ export const themeOptions = [
 ] as const;
 export type ThemeId = (typeof themeOptions)[number]['id'];
 export type Preferences = {
-  version: 1;
+  version: 2;
   theme: ThemeId;
+  themePackId: string;
+  themePackVersion: string;
   font: FontId;
   fontSize: 14 | 15 | 16;
   motion: 'system' | 'reduced';
   sidebarCollapsed: boolean;
 };
-export const preferenceKey = 'ludian.preferences.v1';
+export const preferenceKey = 'ludian.preferences.v2';
+export const legacyPreferenceKey = 'ludian.preferences.v1';
 export const defaultPreferences: Preferences = {
-  version: 1,
+  version: 2,
   theme: 'system',
+  themePackId: 'classic',
+  themePackVersion: '1.0.0',
   font: 'rounded',
   fontSize: 14,
   motion: 'system',
@@ -44,12 +49,24 @@ export const defaultPreferences: Preferences = {
 export function parsePreferences(raw: string | null): Preferences {
   try {
     const p: unknown = JSON.parse(raw ?? 'null');
-    if (!p || typeof p !== 'object' || !('version' in p) || p.version !== 1)
+    if (!p || typeof p !== 'object' || !('version' in p) || (p.version !== 1 && p.version !== 2))
       return { ...defaultPreferences };
     const value = p as Record<string, unknown>;
     return {
-      version: 1,
+      version: 2,
       theme: themeOptions.some((t) => t.id === value.theme) ? (value.theme as ThemeId) : 'system',
+      themePackId:
+        value.version === 2 &&
+        typeof value.themePackId === 'string' &&
+        /^[a-z][a-z0-9-]{0,63}$/.test(value.themePackId)
+          ? value.themePackId
+          : 'classic',
+      themePackVersion:
+        value.version === 2 &&
+        typeof value.themePackVersion === 'string' &&
+        /^\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(value.themePackVersion)
+          ? value.themePackVersion
+          : '1.0.0',
       font: fontOptions.some((f) => f.id === value.font)
         ? (value.font as FontId)
         : defaultPreferences.font,

@@ -8,5 +8,6 @@ $configPath=Join-Path $repoRoot '.local\tauri.qa.json'
 [System.IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 8), (New-Object System.Text.UTF8Encoding $false))
 & npm.cmd run tauri -- build --debug --no-bundle --config $configPath
 if($LASTEXITCODE -ne 0){throw '桌面验收构建失败'}
-& node.exe scripts/native-smoke.mjs src-tauri/target/debug/guilu.exe
+$taskTargetRoot = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $repoRoot 'src-tauri\target' }
+& node.exe scripts/native-smoke.mjs (Join-Path $taskTargetRoot 'debug\guilu.exe')
 if($LASTEXITCODE -ne 0){throw '桌面验收未通过'}
