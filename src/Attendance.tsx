@@ -20,7 +20,15 @@ import { setRecordsVoided } from './features/attendance/model';
 import { RecordEditor } from './features/attendance/RecordEditor';
 import type { AttendanceRecord, Session, Student } from './model';
 import { beijingNow, counts, matchCourse, uid } from './model';
-export function Attendance({ session, onReports }: { session?: Session; onReports: () => void }) {
+export function Attendance({
+  session,
+  mobile = false,
+  onReports,
+}: {
+  session?: Session;
+  mobile?: boolean;
+  onReports: () => void;
+}) {
   const { w, update, busy, notify } = useApp();
   const now = beijingNow();
   const matched = matchCourse(w, now.date, now.time);
@@ -87,16 +95,18 @@ export function Attendance({ session, onReports }: { session?: Session; onReport
         page="attendance"
         description={`${w.name} · ${w.students.length} 位同学 · ${w.term}`}
         actions={
-          <>
-            <Button onClick={onReports}>
-              <FileText size={16} />
-              查看汇总
-            </Button>
-            <Button className="primary" onClick={() => setManual(true)}>
-              <Plus size={16} />
-              补记考勤
-            </Button>
-          </>
+          mobile ? null : (
+            <>
+              <Button onClick={onReports}>
+                <FileText size={16} />
+                查看汇总
+              </Button>
+              <Button className="primary" onClick={() => setManual(true)}>
+                <Plus size={16} />
+                补记考勤
+              </Button>
+            </>
+          )
         }
       />
       <SessionFields context={context} setContext={setContext} note={note} setNote={setNote} />
@@ -146,105 +156,149 @@ export function Attendance({ session, onReports }: { session?: Session; onReport
           </Button>
         </div>
       )}
-      <div className="table-container">
-        <table className="student-table">
-          <thead>
-            <tr>
-              <th className="check-cell">
-                <Button
-                  className="checkbox-button"
-                  aria-label="选择全部筛选同学"
-                  onClick={() =>
-                    setSelected(
-                      shown.length && shown.every((s) => selected.includes(s.id))
-                        ? []
-                        : shown.map((s) => s.id),
-                    )
-                  }
-                >
-                  {shown.length > 0 && shown.every((s) => selected.includes(s.id)) ? (
-                    <CheckSquare size={17} />
-                  ) : (
-                    <Square size={17} />
-                  )}
-                </Button>
-              </th>
-              <th>
-                姓名 <span className="header-light">Aa</span>
-              </th>
-              <th>学号</th>
-              {w.categories.map((c) => (
-                <th key={c.id}>
-                  <Tag color={c.color}>{c.label}</Tag>
-                </th>
-              ))}
-              <th>累计</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((s, i) => {
+      <div className={`table-container ${mobile ? 'mobile-student-list' : ''}`}>
+        {mobile && (
+          <div className="mobile-student-cards">
+            {shown.map((s) => {
               const cs = counts(w, s.id);
               return (
-                <tr key={s.id} data-testid="student-row">
-                  <td className="check-cell">
-                    <input
-                      type="checkbox"
-                      aria-label={`选择${s.name}`}
-                      checked={selected.includes(s.id)}
-                      onChange={(e) =>
-                        setSelected(
-                          e.target.checked
-                            ? [...selected, s.id]
-                            : selected.filter((id) => id !== s.id),
-                        )
-                      }
-                    />
-                  </td>
-                  <td>
+                <article className="mobile-student-card" key={s.id}>
+                  <div className="mobile-student-heading">
                     <Button className="student-name" onClick={() => openDetail(s)}>
-                      <span className={`avatar avatar-${i % 5}`}>{s.name.slice(-2)}</span>
                       <strong>{s.name}</strong>
                     </Button>
-                  </td>
-                  <td className="student-number">{s.number}</td>
-                  {w.categories.map((c) => (
-                    <td key={c.id}>
-                      <div className="counter">
+                    <span>{s.number}</span>
+                  </div>
+                  {s.group && <small className="mobile-student-group">{s.group}</small>}
+                  <div className="mobile-category-actions">
+                    {w.categories.map((c) => (
+                      <div className="mobile-category-action" key={c.id}>
+                        <Tag color={c.color}>{c.label}</Tag>
+                        <strong className={cs[c.id] ? `count-value ${c.color}` : 'zero'}>
+                          {cs[c.id] || '0'}
+                        </strong>
                         <IconButton
                           label={`${s.name}${c.label}减一`}
                           disabled={busy || !cs[c.id]}
                           onClick={() => openDetail(s, c.id)}
                         >
-                          <Minus size={13} />
+                          <Minus size={17} />
                         </IconButton>
-                        <span className={cs[c.id] ? `count-value ${c.color}` : 'zero'}>
-                          {cs[c.id] || '—'}
-                        </span>
                         <Button
                           aria-label={`${s.name}${c.label}加一`}
-                          title={`登记一次${c.label}`}
                           disabled={busy}
                           onClick={() => add([s.id], c.id)}
                         >
-                          <Plus size={13} />
+                          <Plus size={17} />
                         </Button>
                       </div>
-                    </td>
-                  ))}
-                  <td className="total-cell">
-                    {Object.values(cs).reduce((a, b) => a + b, 0) || '—'}
-                  </td>
-                  <td>
-                    <IconButton label={`查看${s.name}明细`} onClick={() => openDetail(s)}>
-                      <ArrowUpRight size={15} />
-                    </IconButton>
-                  </td>
-                </tr>
+                    ))}
+                  </div>
+                </article>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        )}
+        {!mobile && (
+          <table className="student-table">
+            <thead>
+              <tr>
+                <th className="check-cell">
+                  <Button
+                    className="checkbox-button"
+                    aria-label="选择全部筛选同学"
+                    onClick={() =>
+                      setSelected(
+                        shown.length && shown.every((s) => selected.includes(s.id))
+                          ? []
+                          : shown.map((s) => s.id),
+                      )
+                    }
+                  >
+                    {shown.length > 0 && shown.every((s) => selected.includes(s.id)) ? (
+                      <CheckSquare size={17} />
+                    ) : (
+                      <Square size={17} />
+                    )}
+                  </Button>
+                </th>
+                <th>
+                  姓名 <span className="header-light">Aa</span>
+                </th>
+                <th>学号</th>
+                {w.categories.map((c) => (
+                  <th key={c.id}>
+                    <Tag color={c.color}>{c.label}</Tag>
+                  </th>
+                ))}
+                <th>累计</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((s, i) => {
+                const cs = counts(w, s.id);
+                return (
+                  <tr key={s.id} data-testid="student-row">
+                    <td className="check-cell">
+                      <input
+                        type="checkbox"
+                        aria-label={`选择${s.name}`}
+                        checked={selected.includes(s.id)}
+                        onChange={(e) =>
+                          setSelected(
+                            e.target.checked
+                              ? [...selected, s.id]
+                              : selected.filter((id) => id !== s.id),
+                          )
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Button className="student-name" onClick={() => openDetail(s)}>
+                        <span className={`avatar avatar-${i % 5}`}>{s.name.slice(-2)}</span>
+                        <strong>{s.name}</strong>
+                      </Button>
+                    </td>
+                    <td className="student-number">{s.number}</td>
+                    {w.categories.map((c) => (
+                      <td key={c.id}>
+                        <div className="counter">
+                          <IconButton
+                            label={`${s.name}${c.label}减一`}
+                            disabled={busy || !cs[c.id]}
+                            onClick={() => openDetail(s, c.id)}
+                          >
+                            <Minus size={13} />
+                          </IconButton>
+                          <span className={cs[c.id] ? `count-value ${c.color}` : 'zero'}>
+                            {cs[c.id] || '—'}
+                          </span>
+                          <Button
+                            aria-label={`${s.name}${c.label}加一`}
+                            title={`登记一次${c.label}`}
+                            disabled={busy}
+                            onClick={() => add([s.id], c.id)}
+                          >
+                            <Plus size={13} />
+                          </Button>
+                        </div>
+                      </td>
+                    ))}
+                    <td className="total-cell">
+                      {Object.values(cs).reduce((a, b) => a + b, 0) || '—'}
+                    </td>
+                    <td>
+                      <IconButton label={`查看${s.name}明细`} onClick={() => openDetail(s)}>
+                        <ArrowUpRight size={15} />
+                      </IconButton>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
         {!shown.length && (
           <Empty
             icon={<Users size={30} />}
@@ -255,7 +309,7 @@ export function Attendance({ session, onReports }: { session?: Session; onReport
           />
         )}
       </div>
-      <div className="table-footer">
+      <div className={`table-footer ${mobile ? 'mobile-table-footer' : ''}`}>
         <span>
           {shown.length} 位同学 · {total} 条有效记录
         </span>
@@ -266,6 +320,7 @@ export function Attendance({ session, onReports }: { session?: Session; onReport
           student={student}
           category={category}
           session={context}
+          readOnly={mobile}
           onClose={() => setStudent(null)}
         />
       )}

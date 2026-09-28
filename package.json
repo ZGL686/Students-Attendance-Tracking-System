@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 15473 --strictPort",
     "build": "tsc -b && vite build",
+    "build:android": "node scripts/build-android.mjs",
+    "android:init": "tauri android init",
+    "android:build": "tauri android build --apk --target aarch64 --target armv7",
     "preview": "vite preview --host 127.0.0.1 --port 15474",
     "test": "vitest run",
     "test:e2e": "playwright test",
@@ -25,7 +28,7 @@
     "prebuild": "npm run prepare:offline"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/api": "^2.9.0",
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-fs": "^2.4.0",
     "exceljs": "^4.4.0",

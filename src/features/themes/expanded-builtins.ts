@@ -26,7 +26,7 @@ function landscape(
       light: tintedPalette(hue, lightAccent, false),
       dark: tintedPalette(hue, darkAccent, true),
     },
-    imageUrl: `/themes/${id}.png`,
+    imageUrl: `/themes/${id}.webp`,
   };
 }
 export const expandedThemes: BuiltinTheme[] = [

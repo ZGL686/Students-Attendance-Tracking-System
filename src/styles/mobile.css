@@ -1,0 +1,471 @@
+.mobile-week-agenda {
+  display: none;
+}
+
+.app-shell[data-mobile='true'] {
+  grid-template-areas: 'main' 'mobile-nav';
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100vh;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  overflow: hidden;
+}
+
+.app-shell[data-mobile='true'] .sidebar {
+  display: none;
+}
+
+.app-shell[data-mobile='true'] .app-main {
+  min-height: 0;
+}
+
+.app-shell[data-mobile='true'] .topbar {
+  min-height: 48px;
+  gap: 8px;
+  padding: 0 max(14px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--line);
+}
+
+.app-shell[data-mobile='true'] .topbar > div:first-child {
+  flex: 1;
+  font-size: 0.9286rem;
+}
+
+.app-shell[data-mobile='true'] .topbar > div:last-child {
+  gap: 0;
+}
+
+.app-shell[data-mobile='true'] .topbar .beijing-clock {
+  display: none;
+}
+
+.app-shell[data-mobile='true'] .saved-status {
+  font-size: 0;
+}
+
+.app-shell[data-mobile='true'] .mobile-navigation {
+  grid-area: mobile-nav;
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: 58px;
+  padding: 4px max(6px, env(safe-area-inset-right, 0px))
+    calc(4px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.mobile-navigation button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 50px;
+  padding: 3px 1px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.mobile-navigation button.active {
+  color: var(--blue);
+  background: var(--selected);
+}
+
+.mobile-navigation button span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-shell[data-mobile='true'] .page-content {
+  padding: 18px 15px calc(26px + env(safe-area-inset-bottom, 0px));
+}
+
+.app-shell[data-mobile='true'] .page-heading {
+  align-items: flex-start;
+  margin-bottom: 19px;
+}
+
+.app-shell[data-mobile='true'] .page-heading h1 {
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 1.72rem;
+  line-height: 1.25;
+}
+
+.app-shell[data-mobile='true'] .page-heading p {
+  font-size: 0.9rem;
+}
+
+.app-shell[data-mobile='true'] .heading-actions {
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.app-shell[data-mobile='true'] .overview-strip {
+  gap: 14px;
+  overflow: auto;
+  padding-bottom: 13px;
+}
+
+.app-shell[data-mobile='true'] .overview-strip > div {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+}
+
+.app-shell[data-mobile='true'] .overview-strip .strip-note,
+.app-shell[data-mobile='true'] .daily-panel,
+.app-shell[data-mobile='true'] .calendar,
+.app-shell[data-mobile='true'] .calendar-footer,
+.app-shell[data-mobile='true'] .mobile-table-footer {
+  display: none;
+}
+
+.app-shell[data-mobile='true'] .schedule-layout {
+  gap: 14px;
+}
+
+.app-shell[data-mobile='true'] .section-toolbar {
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+
+.app-shell[data-mobile='true'] .week-navigation {
+  flex-wrap: wrap;
+}
+
+.app-shell[data-mobile='true'] .date-range {
+  margin-left: 4px;
+  font-size: 0.78rem;
+}
+
+.app-shell[data-mobile='true'] .mobile-week-agenda {
+  display: grid;
+  gap: 9px;
+}
+
+.mobile-week-agenda > section {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.mobile-week-agenda > section.today {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px var(--blue) inset;
+}
+
+.mobile-week-agenda h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  font-size: 0.98rem;
+}
+
+.mobile-week-agenda h3 span,
+.mobile-week-agenda h3 small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+
+.mobile-week-agenda h3 small {
+  margin-left: auto;
+  color: var(--blue);
+}
+
+.mobile-week-agenda section > p {
+  padding: 5px 1px;
+  color: var(--subtle);
+  font-size: 0.85rem;
+}
+
+.mobile-agenda-course {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 5px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  white-space: normal;
+  text-align: left;
+}
+
+.mobile-agenda-course strong {
+  font-size: 0.92rem;
+}
+
+.mobile-agenda-course span,
+.mobile-agenda-course small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.app-shell[data-mobile='true'] .attendance-context {
+  padding: 13px;
+  margin-bottom: 14px;
+  border-radius: 9px;
+}
+
+.app-shell[data-mobile='true'] .context-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 9px;
+}
+
+.app-shell[data-mobile='true'] .context-fields label:first-child,
+.app-shell[data-mobile='true'] .context-fields label:nth-child(2) {
+  max-width: none;
+}
+
+.app-shell[data-mobile='true'] .context-fields .course-select-label {
+  grid-column: 1 / -1;
+}
+
+.app-shell[data-mobile='true'] .context-fields > button {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.app-shell[data-mobile='true'] .attendance-context label,
+.app-shell[data-mobile='true'] .session-note,
+.app-shell[data-mobile='true'] .temporary-course {
+  font-size: 0.84rem;
+}
+
+.app-shell[data-mobile='true'] .temporary-course,
+.app-shell[data-mobile='true'] .session-note {
+  flex-wrap: wrap;
+  gap: 5px;
+  white-space: normal;
+}
+
+.app-shell[data-mobile='true'] .temporary-course input,
+.app-shell[data-mobile='true'] .session-note input {
+  flex-basis: 100%;
+}
+
+.app-shell[data-mobile='true'] .table-toolbar {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.app-shell[data-mobile='true'] .tabs {
+  overflow-x: auto;
+}
+
+.app-shell[data-mobile='true'] .tabs button {
+  flex-shrink: 0;
+  min-height: 38px;
+  font-size: 0.85rem;
+}
+
+.app-shell[data-mobile='true'] .toolbar-right {
+  width: 100%;
+}
+
+.app-shell[data-mobile='true'] .toolbar-right > button {
+  display: none;
+}
+
+.app-shell[data-mobile='true'] .search-box {
+  width: 100%;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.app-shell[data-mobile='true'] .search-box input {
+  width: 100%;
+  min-height: 40px;
+}
+
+.app-shell[data-mobile='true'] .mobile-student-list {
+  overflow: visible;
+}
+
+.mobile-student-cards,
+.mobile-lookup-list,
+.mobile-history-list {
+  display: grid;
+  gap: 9px;
+}
+
+.mobile-student-card,
+.mobile-lookup-card,
+.mobile-history-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+
+.mobile-student-heading,
+.mobile-lookup-identity,
+.mobile-history-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mobile-student-heading > span,
+.mobile-lookup-identity small,
+.mobile-history-primary small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-student-heading > span {
+  margin-left: auto;
+}
+
+.mobile-student-heading .student-name {
+  max-width: 55%;
+  justify-content: flex-start;
+}
+
+.mobile-student-group {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.mobile-category-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.mobile-category-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.mobile-category-action .tag {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+}
+
+.mobile-category-action strong {
+  min-width: 12px;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.mobile-category-action button {
+  width: 34px;
+  min-height: 36px;
+  padding: 2px;
+}
+
+.mobile-table-footer {
+  display: none;
+}
+
+.mobile-student-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.mobile-student-search input {
+  min-height: 42px;
+  padding: 6px 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.mobile-lookup-identity .icon-tile {
+  flex-shrink: 0;
+}
+
+.mobile-lookup-identity > div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.mobile-lookup-identity > div strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-lookup-identity > button {
+  flex-shrink: 0;
+}
+
+.mobile-history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.mobile-history-primary {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.mobile-history-primary > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.mobile-history-primary .tag {
+  flex-shrink: 0;
+}
+
+.mobile-history-course {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 0;
+}
+
+.mobile-history-course span,
+.mobile-history-course small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.mobile-history-card.voided {
+  opacity: 0.7;
+}

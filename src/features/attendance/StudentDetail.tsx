@@ -10,11 +10,13 @@ export function StudentDetail({
   student,
   category,
   session,
+  readOnly = false,
   onClose,
 }: {
   student: Student;
   category?: string;
   session: Session;
+  readOnly?: boolean;
   onClose: () => void;
 }) {
   const { w, update, busy } = useApp();
@@ -86,9 +88,11 @@ export function StudentDetail({
             <Tag color={w.categories.find((c) => c.id === r.category)?.color}>
               {r.voided ? '已撤销' : w.categories.find((c) => c.id === r.category)?.label}
             </Tag>
-            <IconButton label="编辑记录" disabled={r.voided} onClick={() => setEditing(r)}>
-              <Pencil size={15} />
-            </IconButton>
+            {!readOnly && (
+              <IconButton label="编辑记录" disabled={r.voided} onClick={() => setEditing(r)}>
+                <Pencil size={15} />
+              </IconButton>
+            )}
             <Button
               className="text-button"
               disabled={busy}

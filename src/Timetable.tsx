@@ -24,10 +24,12 @@ import { coursesOverlap } from './features/timetable-import/model';
 const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 export function Timetable({
   now,
+  mobile = false,
   onAttendance,
   onSettings,
 }: {
   now: { date: string; time: string };
+  mobile?: boolean;
   onAttendance: (s?: Session) => void;
   onSettings: () => void;
 }) {
@@ -49,20 +51,22 @@ export function Timetable({
         page="schedule"
         description={`${w.term} · ${w.name}`}
         actions={
-          <>
-            <Button onClick={onSettings}>
-              <Settings2 size={16} />
-              学期设置
-            </Button>
-            <Button onClick={() => setImportTarget(w.id)}>
-              <Upload size={16} />
-              导入课程
-            </Button>
-            <Button className="primary" onClick={() => setEditor(null)}>
-              <Plus size={16} />
-              添加课程
-            </Button>
-          </>
+          mobile ? null : (
+            <>
+              <Button onClick={onSettings}>
+                <Settings2 size={16} />
+                学期设置
+              </Button>
+              <Button onClick={() => setImportTarget(w.id)}>
+                <Upload size={16} />
+                导入课程
+              </Button>
+              <Button className="primary" onClick={() => setEditor(null)}>
+                <Plus size={16} />
+                添加课程
+              </Button>
+            </>
+          )
         }
       />
       <div className="overview-strip">
@@ -123,6 +127,39 @@ export function Timetable({
           {(current < 1 || current > w.totalWeeks) && (
             <div className="inline-note">当前日期在学期范围之外，正在预览第 {week} 周。</div>
           )}
+          {mobile && (
+            <div className="mobile-week-agenda" aria-label={`第 ${week} 周每日课程`}>
+              {dates.map((date, index) => {
+                const dailyCourses = courses.filter((course) => course.day === index + 1);
+                return (
+                  <section className={date === now.date ? 'today' : ''} key={date}>
+                    <h3>
+                      {days[index]}
+                      <span>{date.slice(5).replace('-', '/')}</span>
+                      {date === now.date && <small>今天</small>}
+                    </h3>
+                    {dailyCourses.length ? (
+                      dailyCourses.map((course) => (
+                        <Button
+                          className={`mobile-agenda-course ${course.color}`}
+                          key={course.id}
+                          onClick={() => setDetail(course)}
+                        >
+                          <strong>{course.name}</strong>
+                          <span>
+                            第 {course.start}–{course.end} 节 · {course.room || '教室待定'}
+                          </span>
+                          <small>{course.teacher || '教师待定'}</small>
+                        </Button>
+                      ))
+                    ) : (
+                      <p>暂无课程</p>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
           <div className="calendar" role="region" aria-label={`第 ${week} 周课表`}>
             <div className="calendar-corner">{Number(dates[0].slice(5, 7))} 月</div>
             {days.map((day, i) => (
@@ -165,13 +202,15 @@ export function Timetable({
               </Button>
             ))}
           </div>
-          <div className="calendar-footer">
-            <span>
-              <span className="tiny-square" />
-              点击课程查看详情或开始考勤
-            </span>
-            <span>共 {w.totalWeeks} 个教学周</span>
-          </div>
+          {!mobile && (
+            <div className="calendar-footer">
+              <span>
+                <span className="tiny-square" />
+                点击课程查看详情或开始考勤
+              </span>
+              <span>共 {w.totalWeeks} 个教学周</span>
+            </div>
+          )}
         </section>
         <aside className="daily-panel">
           <div className="daily-title">
@@ -291,14 +330,16 @@ export function Timetable({
             <Tag color={detail.color}>{dates[detail.day - 1]}</Tag>
           </div>
           <div className="modal-actions">
-            <Button
-              onClick={() => {
-                setEditor(detail);
-                setDetail(null);
-              }}
-            >
-              编辑课程
-            </Button>
+            {!mobile && (
+              <Button
+                onClick={() => {
+                  setEditor(detail);
+                  setDetail(null);
+                }}
+              >
+                编辑课程
+              </Button>
+            )}
             <Button
               className="primary"
               onClick={() => {

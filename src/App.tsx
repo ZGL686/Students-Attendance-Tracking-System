@@ -5,20 +5,29 @@ import { WorkspaceManager } from './features/workspaces/WorkspaceManager';
 import { Attendance } from './Attendance';
 import { ErrorBoundary } from './components/ui';
 import { useApp } from './context';
+import { useAndroidBackNavigation } from './app/useAndroidBackNavigation';
+import { RecordHistory } from './features/attendance/RecordHistory';
+import { StudentLookup } from './features/attendance/StudentLookup';
+import { isPristineMobileData } from './features/backups/merge';
 import { Database } from './features/database/DatabasePage';
 import { Backups, NewWorkspace, Settings } from './features/settings';
 import type { Session } from './model';
 import { beijingNow } from './model';
+import { androidWorkspaceImported, isAndroid, isTauriApp } from './platform';
 import { Reports } from './Reports';
 import { Timetable } from './Timetable';
 
 export default function App() {
-  const { w } = useApp();
-  const [page, setPage] = useState<PageId>('schedule');
+  const { data, w } = useApp();
+  const mobile = isAndroid;
+  const [page, setPage] = useState<PageId>(() =>
+    mobile && !androidWorkspaceImported() && isPristineMobileData(data) ? 'backups' : 'schedule',
+  );
   const [now, setNow] = useState(beijingNow());
   const [manageWorkspaces, setManageWorkspaces] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState(false);
   const [session, setSession] = useState<Session>();
+  useAndroidBackNavigation(mobile && isTauriApp, page, setPage);
   useEffect(() => {
     const timer = setInterval(() => setNow(beijingNow()), 10000);
     return () => clearInterval(timer);
@@ -32,6 +41,7 @@ export default function App() {
     <>
       <AppShell
         page={page}
+        mobile={mobile}
         navigate={navigate}
         now={now}
         onNew={() => {
@@ -49,6 +59,7 @@ export default function App() {
             {page === 'schedule' && (
               <Timetable
                 now={now}
+                mobile={mobile}
                 onAttendance={(next) => {
                   setSession(next);
                   setPage('attendance');
@@ -57,11 +68,12 @@ export default function App() {
               />
             )}
             {page === 'attendance' && (
-              <Attendance session={session} onReports={() => navigate('reports')} />
+              <Attendance session={session} mobile={mobile} onReports={() => navigate('reports')} />
             )}
-            {(page === 'students' || page === 'records') && <Database kind={page} />}
+            {page === 'students' && (mobile ? <StudentLookup /> : <Database kind="students" />)}
+            {page === 'records' && (mobile ? <RecordHistory /> : <Database kind="records" />)}
             {page === 'reports' && <Reports />}
-            {page === 'backups' && <Backups />}
+            {page === 'backups' && <Backups onImportComplete={() => navigate('schedule')} />}
             {page === 'settings' && <Settings />}
           </ErrorBoundary>
         </div>

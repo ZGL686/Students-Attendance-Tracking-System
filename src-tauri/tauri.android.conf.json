@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "npm run build:android"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Ludian · 班级考勤",
+        "width": 412,
+        "height": 860,
+        "center": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "android": {
+      "minSdkVersion": 24
+    }
+  }
+}

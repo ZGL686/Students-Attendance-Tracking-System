@@ -50,9 +50,9 @@ export const themeDefinitionSchema = z.strictObject({
 export const builtinThemeSchema = z
   .strictObject({
     definition: themeDefinitionSchema,
-    imageUrl: z.string().regex(/^\/themes\/[a-z][a-z0-9-]*\.png$/),
+    imageUrl: z.string().regex(/^\/themes\/[a-z][a-z0-9-]*\.webp$/),
   })
-  .refine((theme) => theme.imageUrl === `/themes/${theme.definition.id}.png`);
+  .refine((theme) => theme.imageUrl === `/themes/${theme.definition.id}.webp`);
 export type ThemePalette = z.infer<typeof paletteSchema>;
 export type ThemeDefinition = z.infer<typeof themeDefinitionSchema>;
 export type BuiltinTheme = z.infer<typeof builtinThemeSchema>;

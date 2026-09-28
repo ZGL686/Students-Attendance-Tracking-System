@@ -58,7 +58,7 @@ function pack(
       version: '1.0.0',
       backgroundOpacity: 0.15,
     },
-    imageUrl: `/themes/${id}.png`,
+    imageUrl: `/themes/${id}.webp`,
   };
 }
 export const builtinThemes: BuiltinTheme[] = [

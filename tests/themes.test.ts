@@ -23,7 +23,7 @@ describe('bundled theme library', () => {
       expect(builtinThemes.some((theme) => theme.definition.category === category)).toBe(true);
     for (const theme of builtinThemes) {
       expect(builtinThemeSchema.safeParse(theme).success).toBe(true);
-      expect(theme.imageUrl).toBe(`/themes/${theme.definition.id}.png`);
+      expect(theme.imageUrl).toBe(`/themes/${theme.definition.id}.webp`);
       expect(themeStyles(theme, false)).not.toEqual(themeStyles(theme, true));
     }
   });
@@ -65,11 +65,11 @@ describe('bundled theme library', () => {
       }).success,
     ).toBe(false);
     expect(
-      builtinThemeSchema.safeParse({ ...original, imageUrl: 'https://example.com/theme.png' })
+      builtinThemeSchema.safeParse({ ...original, imageUrl: 'https://example.com/theme.webp' })
         .success,
     ).toBe(false);
     expect(
-      builtinThemeSchema.safeParse({ ...original, imageUrl: '/themes/another-theme.png' }).success,
+      builtinThemeSchema.safeParse({ ...original, imageUrl: '/themes/another-theme.webp' }).success,
     ).toBe(false);
   });
 });

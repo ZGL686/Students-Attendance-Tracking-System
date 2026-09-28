@@ -2,8 +2,9 @@ import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppLogo, Button, Toast } from './components/ui';
 import type { AppData, Workspace } from './model';
-import { dataSchema } from './model';
+import { dataSchema, newWorkspace } from './model';
 import { loadSeed } from './seed';
+import { isAndroid } from './platform';
 import * as storage from './storage';
 
 type Context = {
@@ -36,7 +37,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         let current = await storage.load();
         if (!current) {
-          const initial = await loadSeed();
+          const initial = isAndroid
+            ? dataSchema.parse(
+                (() => {
+                  const workspace = newWorkspace('请导入 Windows 备份');
+                  return {
+                    schemaVersion: 3,
+                    activeWorkspaceId: workspace.id,
+                    workspaces: [workspace],
+                  };
+                })(),
+              )
+            : await loadSeed();
           current = { data: initial, revision: await storage.save(initial, 0) };
         }
         state.current = current;

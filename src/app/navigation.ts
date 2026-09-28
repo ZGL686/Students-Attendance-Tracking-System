@@ -27,3 +27,4 @@ export const primaryPages: PageId[] = [
   'reports',
   'backups',
 ];
+export const mobilePages: PageId[] = ['schedule', 'attendance', 'students', 'records', 'backups'];

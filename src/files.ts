@@ -1,6 +1,18 @@
 import type { AppData, Student, Workspace } from './model';
 import { counts, dataSchema, uid } from './model';
-import { desktop } from './storage';
+import { isTauriApp } from './platform';
+
+export async function chooseTextFile(extensions: string[]): Promise<string | null> {
+  if (!isTauriApp) return null;
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const selected = await open({
+    multiple: false,
+    filters: [{ name: 'Ludian备份文件', extensions }],
+  });
+  if (!selected || Array.isArray(selected)) return null;
+  const { readTextFile } = await import('@tauri-apps/plugin-fs');
+  return readTextFile(selected);
+}
 
 export async function download(
   name: string,
@@ -8,7 +20,7 @@ export async function download(
   mime = 'application/octet-stream',
 ): Promise<boolean> {
   const bytes = typeof content === 'string' ? new TextEncoder().encode(content) : content;
-  if (desktop) {
+  if (isTauriApp) {
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { writeFile } = await import('@tauri-apps/plugin-fs');
     const path = await save({
