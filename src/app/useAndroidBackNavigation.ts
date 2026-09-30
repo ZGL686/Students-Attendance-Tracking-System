@@ -18,7 +18,8 @@ export function useAndroidBackNavigation(
     let registering = false;
     let listener: Awaited<ReturnType<typeof onBackButtonPress>> | undefined;
     const needsListener = () =>
-      pageRef.current !== 'schedule' || !!document.querySelector('dialog[open], .ui-popover');
+      pageRef.current !== 'schedule' ||
+      !!document.querySelector('dialog[open], .ui-popover, .ui-drawer');
 
     const reconcile = () => {
       if (disposed) return;
@@ -32,7 +33,7 @@ export function useAndroidBackNavigation(
             topDialog.dispatchEvent(new Event('cancel', { cancelable: true }));
             return;
           }
-          if (document.querySelector('.ui-popover')) {
+          if (document.querySelector('.ui-popover, .ui-drawer')) {
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
             return;
           }

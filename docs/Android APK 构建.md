@@ -19,7 +19,9 @@ Ludian 使用 Tauri 2 打包 Android 应用，最低支持 Android 7.0（SDK 24�
    npm run tauri -- icon public/favicon.svg --output src-tauri/icons
    ```
 
-生成的 `src-tauri/gen/android` 属于本机工具链输出，不纳入 Git；新环境首次构建需运行初始化命令。Android 前端构建会打包全部离线主题，并排除课表 OCR/PDF 的 Worker、WASM 和语言数据。
+生成的 `src-tauri/gen/android` 属于本机工具链输出，不纳入 Git；新环境首次构建需运行初始化命令。0.5.1 Android 前端打包全部离线主题及 OCR/PDF 的 Worker、WASM 和中英文语言数据，恢复手机本地导入；构建脚本自动准备这些资源。原始主题 PNG 不进入 APK，使用压缩后的 WebP。
+
+本机已配置 JDK 17、SDK 36、NDK 29 和两种 Rust 手机目标，位于忽略目录 `.local/android-toolchain`。构建时设置 `JAVA_HOME`、`ANDROID_HOME`、`NDK_HOME` 和 `GRADLE_USER_HOME` 指向对应目录。Windows 跨盘符 Kotlin 增量缓存失败时，可在生成工程的 `gradle.properties` 设置 `kotlin.incremental=false`。依赖镜像如需配置，根工程及 `buildSrc` 的插件和依赖仓库都需要检查。
 
 ## 签名与构建
 

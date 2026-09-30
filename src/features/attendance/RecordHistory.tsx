@@ -2,11 +2,13 @@ import { Check, Search, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button, Empty, PageHeading, Tag } from '../../components/ui';
 import { useApp } from '../../context';
+import { LinkedDatabaseDetail as DatabaseDetail } from '../database/LinkedDatabaseDetail';
 import { setRecordsVoided } from './model';
 
 export function RecordHistory() {
   const { w, update, busy } = useApp();
   const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState<string>();
   const [showVoided, setShowVoided] = useState(false);
   const students = new Map(w.students.map((student) => [student.id, student]));
   const categories = new Map(w.categories.map((category) => [category.id, category]));
@@ -65,6 +67,7 @@ export function RecordHistory() {
                 </span>
                 {record.note && <small>{record.note}</small>}
               </div>
+              <Button onClick={() => setEditing(record.id)}>查看 / 编辑记录</Button>
               <Button
                 className="text-button"
                 disabled={busy}
@@ -93,6 +96,9 @@ export function RecordHistory() {
           />
         )}
       </div>
+      {editing && (
+        <DatabaseDetail kind="records" id={editing} onClose={() => setEditing(undefined)} />
+      )}
     </>
   );
 }

@@ -42,11 +42,10 @@ export function Backups({ onImportComplete }: { onImportComplete?: () => void })
       .location()
       .then(setLocation)
       .catch((error) => notify(String(error), true));
-    if (!isAndroid)
-      storage
-        .snapshots()
-        .then(setHistory)
-        .catch((error) => notify(String(error), true));
+    storage
+      .snapshots()
+      .then(setHistory)
+      .catch((error) => notify(String(error), true));
   }, [revision, notify]);
 
   const pristinePhone = isAndroid && !androidWorkspaceImported() && isPristineMobileData(data);
@@ -126,7 +125,7 @@ export function Backups({ onImportComplete }: { onImportComplete?: () => void })
         description={
           isAndroid
             ? pristinePhone
-              ? '首次使用请导入 Windows 备份；之后可在手机与电脑间手动传递。'
+              ? '导入 Windows 备份，或从右上角全部功能新建班级。'
               : '通过 JSON 文件在手机和 Windows 间手动同步考勤数据。'
             : '定期导出完整备份，或把手机上的新增考勤合并回 Windows。'
         }
@@ -147,10 +146,10 @@ export function Backups({ onImportComplete }: { onImportComplete?: () => void })
       </div>
       {isAndroid && pristinePhone && (
         <div className="mobile-import-prompt">
-          <strong>先把 Windows 工作台导入手机</strong>
+          <strong>导入已有班级，或直接在手机新建</strong>
           <p>
-            在 Windows 版导出完整备份，再从本机文件选择该 JSON。首次导入会保留工作台、学生和课程
-            ID。
+            从 Windows 导出的 JSON 可保留原工作台、学生和课程
+            ID。也可以通过右上角“全部功能”新建班级、导入名单或添加课程。
           </p>
         </div>
       )}
@@ -229,7 +228,7 @@ export function Backups({ onImportComplete }: { onImportComplete?: () => void })
           <p>应用更新不会清除本机数据；另请把导出的备份保存到可靠的位置。</p>
         </div>
       </section>
-      {!isAndroid && (
+      {
         <section className="snapshot-section">
           <div className="report-table-heading">
             <h3>
@@ -268,7 +267,7 @@ export function Backups({ onImportComplete }: { onImportComplete?: () => void })
             ))}
           </div>
         </section>
-      )}
+      }
       {incoming && (
         <Modal
           wide
@@ -290,13 +289,13 @@ export function Backups({ onImportComplete }: { onImportComplete?: () => void })
           }
           onClose={() => setIncoming(null)}
         >
-          {incoming.source === 'file' && !isAndroid && (
+          {incoming.source === 'file' && (
             <div className="backup-import-modes" role="group" aria-label="备份导入方式">
               <Button className={mode === 'copy' ? 'selected' : ''} onClick={() => setMode('copy')}>
                 恢复为独立副本
               </Button>
               <Button className={mode === 'sync' ? 'selected' : ''} onClick={() => setMode('sync')}>
-                合并手机考勤
+                {isAndroid ? '更新本机名单与课表' : '合并手机考勤'}
               </Button>
             </div>
           )}

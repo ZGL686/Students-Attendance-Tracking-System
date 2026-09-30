@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-09-28
+updated: 2026-09-30
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-09-30 | feature | 按用户后续要求重新排版手机界面，符合手机屏幕与操作习惯，并尽可能保留桌面功能。 | archived | ludian-mobile-full-workflows | [[日志/2026-09-30-Ludian手机完整交互改造.md|2026-09-30｜Ludian 手机完整交互改造]] |
 | 2026-09-28 | feature | 为 Ludian 增加 Android 手机离线运行、考勤与可审查的手动迁移流程。 | archived | ludian-android-offline-app | [[日志/2026-09-28-Ludian安卓离线版.md|2026-09-28｜Ludian 安卓离线版]] |
 | 2026-09-27 | feature | 增加完整视觉主题和本地课表文件导入，保留旧数据、历史考勤与设备偏好。 | archived | ludian-bundled-themes-offline-timetable-import | [[日志/2026-09-27-Ludian内置主题与离线课表导入.md|2026-09-27｜Ludian 内置主题与离线课表导入]] |
 | 2026-09-24 | feature | 工作台可编辑与删除；主题支持跟随系统 / 浅色 / 深色；考勤登记具备加号与撤销减号，保持公共模块和数据兼容。 | archived | workspace-management-theme-attendance-correction | [[日志/2026-09-24-工作台管理主题与考勤撤销.md|2026-09-24｜工作台管理、主题与考勤撤销]] |

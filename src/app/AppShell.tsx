@@ -15,7 +15,8 @@ import { useApp } from '../context';
 import { usePreferences } from '../preferences/PreferencesProvider';
 import { isAndroid } from '../platform';
 import type { PageId } from './navigation';
-import { mobilePages, pages, primaryPages } from './navigation';
+import { mobilePages, mobileTitles, pages, primaryPages } from './navigation';
+import { MobileTools } from './MobileTools';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 export function AppShell({
@@ -102,7 +103,11 @@ export function AppShell({
                 {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
               </IconButton>
             )}
-            <span className="breadcrumb-home">{w.name}</span>
+            {mobile ? (
+              <WorkspaceSwitcher onNew={onNew} onManage={onManage} onSwitch={onSwitch} />
+            ) : (
+              <span className="breadcrumb-home">{w.name}</span>
+            )}
             {!mobile && (
               <>
                 <span className="breadcrumb-slash">/</span>
@@ -125,6 +130,7 @@ export function AppShell({
               )}
               {busy ? '保存中…' : failed ? '保存未完成' : '已保存'}
             </span>
+            {mobile && <MobileTools navigate={navigate} onNew={onNew} onManage={onManage} />}
             <span className="beijing-clock">
               {now.date} · {now.time}
             </span>
@@ -139,12 +145,13 @@ export function AppShell({
             return (
               <Button
                 key={id}
+                aria-label={title}
                 className={page === id ? 'active' : ''}
                 aria-current={page === id ? 'page' : undefined}
                 onClick={() => navigate(id)}
               >
                 <Icon size={20} strokeWidth={1.8} />
-                <span>{title}</span>
+                <span>{mobileTitles[id] ?? title}</span>
               </Button>
             );
           })}

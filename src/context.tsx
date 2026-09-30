@@ -40,7 +40,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const initial = isAndroid
             ? dataSchema.parse(
                 (() => {
-                  const workspace = newWorkspace('请导入 Windows 备份');
+                  const workspace = newWorkspace('我的工作台');
                   return {
                     schemaVersion: 3,
                     activeWorkspaceId: workspace.id,

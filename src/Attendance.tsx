@@ -95,18 +95,16 @@ export function Attendance({
         page="attendance"
         description={`${w.name} · ${w.students.length} 位同学 · ${w.term}`}
         actions={
-          mobile ? null : (
-            <>
-              <Button onClick={onReports}>
-                <FileText size={16} />
-                查看汇总
-              </Button>
-              <Button className="primary" onClick={() => setManual(true)}>
-                <Plus size={16} />
-                补记考勤
-              </Button>
-            </>
-          )
+          <>
+            <Button onClick={onReports}>
+              <FileText size={16} />
+              查看汇总
+            </Button>
+            <Button className="primary" onClick={() => setManual(true)}>
+              <Plus size={16} />
+              补记考勤
+            </Button>
+          </>
         }
       />
       <SessionFields context={context} setContext={setContext} note={note} setNote={setNote} />
@@ -159,11 +157,37 @@ export function Attendance({
       <div className={`table-container ${mobile ? 'mobile-student-list' : ''}`}>
         {mobile && (
           <div className="mobile-student-cards">
+            <Button
+              className="text-button"
+              onClick={() =>
+                setSelected(
+                  shown.length && shown.every((s) => selected.includes(s.id))
+                    ? []
+                    : shown.map((s) => s.id),
+                )
+              }
+            >
+              选择全部筛选同学
+            </Button>
             {shown.map((s) => {
               const cs = counts(w, s.id);
               return (
                 <article className="mobile-student-card" key={s.id}>
                   <div className="mobile-student-heading">
+                    <label className="phone-student-select">
+                      <input
+                        type="checkbox"
+                        aria-label={`选择${s.name}`}
+                        checked={selected.includes(s.id)}
+                        onChange={(e) =>
+                          setSelected(
+                            e.target.checked
+                              ? [...selected, s.id]
+                              : selected.filter((id) => id !== s.id),
+                          )
+                        }
+                      />
+                    </label>
                     <Button className="student-name" onClick={() => openDetail(s)}>
                       <strong>{s.name}</strong>
                     </Button>
@@ -320,7 +344,7 @@ export function Attendance({
           student={student}
           category={category}
           session={context}
-          readOnly={mobile}
+          readOnly={false}
           onClose={() => setStudent(null)}
         />
       )}

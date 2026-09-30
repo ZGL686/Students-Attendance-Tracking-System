@@ -6,8 +6,8 @@ import { Attendance } from './Attendance';
 import { ErrorBoundary } from './components/ui';
 import { useApp } from './context';
 import { useAndroidBackNavigation } from './app/useAndroidBackNavigation';
-import { RecordHistory } from './features/attendance/RecordHistory';
-import { StudentLookup } from './features/attendance/StudentLookup';
+import { MobileDatabase } from './features/database/MobileDatabase';
+import { useMobileLayout } from './app/useMobileLayout';
 import { isPristineMobileData } from './features/backups/merge';
 import { Database } from './features/database/DatabasePage';
 import { Backups, NewWorkspace, Settings } from './features/settings';
@@ -19,15 +19,15 @@ import { Timetable } from './Timetable';
 
 export default function App() {
   const { data, w } = useApp();
-  const mobile = isAndroid;
+  const mobile = useMobileLayout();
   const [page, setPage] = useState<PageId>(() =>
-    mobile && !androidWorkspaceImported() && isPristineMobileData(data) ? 'backups' : 'schedule',
+    isAndroid && !androidWorkspaceImported() && isPristineMobileData(data) ? 'backups' : 'schedule',
   );
   const [now, setNow] = useState(beijingNow());
   const [manageWorkspaces, setManageWorkspaces] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState(false);
   const [session, setSession] = useState<Session>();
-  useAndroidBackNavigation(mobile && isTauriApp, page, setPage);
+  useAndroidBackNavigation(isAndroid && isTauriApp, page, setPage);
   useEffect(() => {
     const timer = setInterval(() => setNow(beijingNow()), 10000);
     return () => clearInterval(timer);
@@ -70,8 +70,10 @@ export default function App() {
             {page === 'attendance' && (
               <Attendance session={session} mobile={mobile} onReports={() => navigate('reports')} />
             )}
-            {page === 'students' && (mobile ? <StudentLookup /> : <Database kind="students" />)}
-            {page === 'records' && (mobile ? <RecordHistory /> : <Database kind="records" />)}
+            {page === 'students' &&
+              (mobile ? <MobileDatabase kind="students" /> : <Database kind="students" />)}
+            {page === 'records' &&
+              (mobile ? <MobileDatabase kind="records" /> : <Database kind="records" />)}
             {page === 'reports' && <Reports />}
             {page === 'backups' && <Backups onImportComplete={() => navigate('schedule')} />}
             {page === 'settings' && <Settings />}

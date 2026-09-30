@@ -27,4 +27,11 @@ export const primaryPages: PageId[] = [
   'reports',
   'backups',
 ];
+export const mobileTitles: Partial<Record<PageId, string>> = {
+  schedule: '课表',
+  attendance: '考勤',
+  students: '学生',
+  records: '记录',
+  backups: '备份',
+};
 export const mobilePages: PageId[] = ['schedule', 'attendance', 'students', 'records', 'backups'];

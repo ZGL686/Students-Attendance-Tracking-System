@@ -101,7 +101,7 @@
   overflow-wrap: anywhere;
 }
 
-.app-shell[data-mobile='true'] .modal {
+body[data-mobile='true'] .modal {
   width: min(560px, calc(100vw - 24px));
   max-width: none;
   max-height: 88vh;
@@ -110,20 +110,20 @@
   border-radius: 12px;
 }
 
-.app-shell[data-mobile='true'] .modal-top {
+body[data-mobile='true'] .modal-top {
   gap: 8px;
   margin-bottom: 14px;
 }
 
-.app-shell[data-mobile='true'] .modal-top h2 {
+body[data-mobile='true'] .modal-top h2 {
   font-size: 1.25rem;
 }
 
-.app-shell[data-mobile='true'] .modal-top p {
+body[data-mobile='true'] .modal-top p {
   font-size: 0.84rem;
 }
 
-.app-shell[data-mobile='true'] .modal-actions {
+body[data-mobile='true'] .modal-actions {
   position: sticky;
   bottom: -16px;
   gap: 7px;
@@ -132,17 +132,17 @@
   background: var(--surface);
 }
 
-.app-shell[data-mobile='true'] .modal-actions button {
+body[data-mobile='true'] .modal-actions button {
   flex: 1;
   min-height: 42px;
   white-space: normal;
 }
 
-.app-shell[data-mobile='true'] .sync-choice-list {
+body[data-mobile='true'] .sync-choice-list {
   grid-template-columns: 1fr;
 }
 
-.app-shell[data-mobile='true'] .toast {
+body[data-mobile='true'] .toast {
   right: 12px;
   bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   left: 12px;
@@ -150,17 +150,22 @@
   padding: 10px 12px;
 }
 
-.app-shell[data-mobile='true'] .record-item {
+body[data-mobile='true'] .record-item {
   grid-template-columns: 58px minmax(0, 1fr) auto;
   gap: 8px;
 }
 
-.app-shell[data-mobile='true'] .record-item > button.icon-button {
-  display: none;
+body[data-mobile='true'] .record-item > button.icon-button {
+  grid-column: 2;
+  justify-self: end;
+}
+
+body[data-mobile='true'] .record-item > button.text-button {
+  grid-column: 3;
 }
 
 @media (max-width: 370px) {
-  .app-shell[data-mobile='true'] .page-content {
+  body[data-mobile='true'] .page-content {
     padding-right: 11px;
     padding-left: 11px;
   }

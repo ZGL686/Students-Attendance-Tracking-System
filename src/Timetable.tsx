@@ -17,6 +17,7 @@ import { Button, IconButton, Modal, PageHeading, Tag, TextLink } from './compone
 import { useApp } from './context';
 import type { Course, Session } from './model';
 import { coursesOn, formatWeeks, weekDates, weekOf } from './model';
+import { MobileAgenda } from './features/timetable/MobileAgenda';
 import { CourseEditor } from './features/timetable/CourseEditor';
 import { ImportCourses } from './features/timetable-import/ImportCourses';
 import { coursesOverlap } from './features/timetable-import/model';
@@ -37,6 +38,7 @@ export function Timetable({
   const current = weekOf(w.startDate, now.date);
   const [selected, setSelected] = useState<number | null>(null);
   const [weekPicker, setWeekPicker] = useState(false);
+  const [gridView, setGridView] = useState(false);
   const [detail, setDetail] = useState<Course | null>(null);
   const [editor, setEditor] = useState<Course | null | undefined>();
   const [importTarget, setImportTarget] = useState<string>();
@@ -51,22 +53,20 @@ export function Timetable({
         page="schedule"
         description={`${w.term} · ${w.name}`}
         actions={
-          mobile ? null : (
-            <>
-              <Button onClick={onSettings}>
-                <Settings2 size={16} />
-                学期设置
-              </Button>
-              <Button onClick={() => setImportTarget(w.id)}>
-                <Upload size={16} />
-                导入课程
-              </Button>
-              <Button className="primary" onClick={() => setEditor(null)}>
-                <Plus size={16} />
-                添加课程
-              </Button>
-            </>
-          )
+          <>
+            <Button onClick={onSettings}>
+              <Settings2 size={16} />
+              学期设置
+            </Button>
+            <Button onClick={() => setImportTarget(w.id)}>
+              <Upload size={16} />
+              导入课程
+            </Button>
+            <Button className="primary" onClick={() => setEditor(null)}>
+              <Plus size={16} />
+              添加课程
+            </Button>
+          </>
         }
       />
       <div className="overview-strip">
@@ -128,79 +128,69 @@ export function Timetable({
             <div className="inline-note">当前日期在学期范围之外，正在预览第 {week} 周。</div>
           )}
           {mobile && (
-            <div className="mobile-week-agenda" aria-label={`第 ${week} 周每日课程`}>
-              {dates.map((date, index) => {
-                const dailyCourses = courses.filter((course) => course.day === index + 1);
-                return (
-                  <section className={date === now.date ? 'today' : ''} key={date}>
-                    <h3>
-                      {days[index]}
-                      <span>{date.slice(5).replace('-', '/')}</span>
-                      {date === now.date && <small>今天</small>}
-                    </h3>
-                    {dailyCourses.length ? (
-                      dailyCourses.map((course) => (
-                        <Button
-                          className={`mobile-agenda-course ${course.color}`}
-                          key={course.id}
-                          onClick={() => setDetail(course)}
-                        >
-                          <strong>{course.name}</strong>
-                          <span>
-                            第 {course.start}–{course.end} 节 · {course.room || '教室待定'}
-                          </span>
-                          <small>{course.teacher || '教师待定'}</small>
-                        </Button>
-                      ))
-                    ) : (
-                      <p>暂无课程</p>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
+            <>
+              <div className="mobile-view-switch" role="group" aria-label="课表浏览方式">
+                <Button aria-pressed={!gridView} onClick={() => setGridView(false)}>
+                  每日安排
+                </Button>
+                <Button aria-pressed={gridView} onClick={() => setGridView(true)}>
+                  整周课表
+                </Button>
+              </div>
+              {!gridView && (
+                <MobileAgenda
+                  key={dates[0]}
+                  dates={dates}
+                  courses={courses}
+                  today={now.date}
+                  onOpen={setDetail}
+                />
+              )}
+            </>
           )}
-          <div className="calendar" role="region" aria-label={`第 ${week} 周课表`}>
-            <div className="calendar-corner">{Number(dates[0].slice(5, 7))} 月</div>
-            {days.map((day, i) => (
-              <div
-                key={day}
-                className={`day-heading ${dates[i] === now.date ? 'today' : ''} ${i > 4 ? 'weekend' : ''}`}
-              >
-                <span>{day}</span>
-                <b>{Number(dates[i].slice(8))}</b>
-                {dates[i] === now.date && <i>今天</i>}
-              </div>
-            ))}
-            {w.periods.map((p, i) => (
-              <div key={i} className="period-label" style={{ gridColumn: 1, gridRow: i + 2 }}>
-                <b>{i + 1}</b>
-                <span>{p.start}</span>
-                <span>{p.end}</span>
-              </div>
-            ))}
-            {Array.from({ length: 70 }, (_, i) => (
-              <div
-                key={i}
-                className={`calendar-cell ${i % 7 > 4 ? 'weekend' : ''} ${dates[i % 7] === now.date ? 'today-col' : ''} ${Math.floor(i / 7) === 4 ? 'afternoon' : ''}`}
-                style={{ gridColumn: (i % 7) + 2, gridRow: Math.floor(i / 7) + 2 }}
-              />
-            ))}
-            {courses.map((c) => (
-              <Button
-                key={c.id}
-                className={`course-card ${c.color}`}
-                style={{ gridColumn: c.day + 1, gridRow: `${c.start + 1} / ${c.end + 2}` }}
-                onClick={() => setDetail(c)}
-                title={`${c.name} · ${c.room} · ${c.teacher}`}
-              >
-                <strong>{c.name}</strong>
-                <span>{c.room.replace('韶师', '')}</span>
-                <small>
-                  {c.teacher} · {c.start}–{c.end} 节
-                </small>
-              </Button>
-            ))}
+          <div className={mobile && gridView ? 'phone-calendar-scroll' : undefined}>
+            <div className="calendar" role="region" aria-label={`第 ${week} 周课表`}>
+              <div className="calendar-corner">{Number(dates[0].slice(5, 7))} 月</div>
+              {days.map((day, i) => (
+                <div
+                  key={day}
+                  className={`day-heading ${dates[i] === now.date ? 'today' : ''} ${i > 4 ? 'weekend' : ''}`}
+                >
+                  <span>{day}</span>
+                  <b>{Number(dates[i].slice(8))}</b>
+                  {dates[i] === now.date && <i>今天</i>}
+                </div>
+              ))}
+              {w.periods.map((p, i) => (
+                <div key={i} className="period-label" style={{ gridColumn: 1, gridRow: i + 2 }}>
+                  <b>{i + 1}</b>
+                  <span>{p.start}</span>
+                  <span>{p.end}</span>
+                </div>
+              ))}
+              {Array.from({ length: 70 }, (_, i) => (
+                <div
+                  key={i}
+                  className={`calendar-cell ${i % 7 > 4 ? 'weekend' : ''} ${dates[i % 7] === now.date ? 'today-col' : ''} ${Math.floor(i / 7) === 4 ? 'afternoon' : ''}`}
+                  style={{ gridColumn: (i % 7) + 2, gridRow: Math.floor(i / 7) + 2 }}
+                />
+              ))}
+              {courses.map((c) => (
+                <Button
+                  key={c.id}
+                  className={`course-card ${c.color}`}
+                  style={{ gridColumn: c.day + 1, gridRow: `${c.start + 1} / ${c.end + 2}` }}
+                  onClick={() => setDetail(c)}
+                  title={`${c.name} · ${c.room} · ${c.teacher}`}
+                >
+                  <strong>{c.name}</strong>
+                  <span>{c.room.replace('韶师', '')}</span>
+                  <small>
+                    {c.teacher} · {c.start}–{c.end} 节
+                  </small>
+                </Button>
+              ))}
+            </div>
           </div>
           {!mobile && (
             <div className="calendar-footer">
@@ -330,7 +320,7 @@ export function Timetable({
             <Tag color={detail.color}>{dates[detail.day - 1]}</Tag>
           </div>
           <div className="modal-actions">
-            {!mobile && (
+            {
               <Button
                 onClick={() => {
                   setEditor(detail);
@@ -339,7 +329,7 @@ export function Timetable({
               >
                 编辑课程
               </Button>
-            )}
+            }
             <Button
               className="primary"
               onClick={() => {
