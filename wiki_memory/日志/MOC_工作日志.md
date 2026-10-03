@@ -16,6 +16,7 @@ supersedes: null
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-03 | feature | 按用户提供的改进说明优化手机课表、课程导入、考勤记录显示，并增加自定义壁纸与玻璃透明度。 | archived | ludian-mobile-timetable-import-wallpaper | [[日志/2026-10-03-Ludian手机课表导入与壁纸改进.md|2026-10-03｜Ludian 手机课表、导入与壁纸改进]] |
+| 2026-10-03 | maintenance | 按用户要求更新本地 `dist` 中的 Windows EXE 与 Android APK，使其包含最新手机课表、导入、记录表格和壁纸改动。 | active | ludian-0-5-3-local-installer-build | [[日志/2026-10-03-Ludian-0.5.3安装包构建准备.md|2026-10-03｜Ludian 0.5.3 安装包构建准备]] |
 | 2026-09-30 | feature | 按用户后续要求重新排版手机界面，符合手机屏幕与操作习惯，并尽可能保留桌面功能。 | archived | ludian-mobile-full-workflows | [[日志/2026-09-30-Ludian手机完整交互改造.md|2026-09-30｜Ludian 手机完整交互改造]] |
 | 2026-09-28 | feature | 为 Ludian 增加 Android 手机离线运行、考勤与可审查的手动迁移流程。 | archived | ludian-android-offline-app | [[日志/2026-09-28-Ludian安卓离线版.md|2026-09-28｜Ludian 安卓离线版]] |
 | 2026-09-27 | feature | 增加完整视觉主题和本地课表文件导入，保留旧数据、历史考勤与设备偏好。 | archived | ludian-bundled-themes-offline-timetable-import | [[日志/2026-09-27-Ludian内置主题与离线课表导入.md|2026-09-27｜Ludian 内置主题与离线课表导入]] |

@@ -1,6 +1,6 @@
 [package]
 name = "guilu"
-version = "0.5.1"
+version = "0.5.3"
 description = "Ludian班级考勤"
 authors = ["Ludian"]
 edition = "2021"
