@@ -1,31 +1,31 @@
-:root[data-user-wallpaper='true'] .app-main {
+:root[data-visual-background='true'] .app-main {
   background: transparent !important;
-  backdrop-filter: blur(4px);
+  backdrop-filter: none;
 }
 
-:root[data-user-wallpaper='true'] .app-main::before {
+:root[data-visual-background='true'] .app-main::before {
   display: none !important;
 }
 
-:root[data-user-wallpaper='true'] .sidebar,
-:root[data-user-wallpaper='true'] .topbar,
-:root[data-user-wallpaper='true'] .mobile-navigation,
-:root[data-user-wallpaper='true'] .page-heading {
+:root[data-visual-background='true'] .sidebar,
+:root[data-visual-background='true'] .topbar,
+:root[data-visual-background='true'] .mobile-navigation,
+:root[data-visual-background='true'] .page-heading {
   background: var(--surface) !important;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(3px);
 }
 
-:root[data-user-wallpaper='true'] .page-heading {
+:root[data-visual-background='true'] .page-heading {
   isolation: auto;
 }
 
-:root[data-user-wallpaper='true'] .modal,
-:root[data-user-wallpaper='true'] .ui-popover,
-:root[data-user-wallpaper='true'] .database-peek,
-:root[data-user-wallpaper='true'] .mobile-history-table-wrap,
-:root[data-user-wallpaper='true'] .mobile-student-card,
-:root[data-user-wallpaper='true'] .mobile-lookup-card {
-  backdrop-filter: blur(10px);
+:root[data-visual-background='true'] .modal,
+:root[data-visual-background='true'] .ui-popover,
+:root[data-visual-background='true'] .database-peek,
+:root[data-visual-background='true'] .mobile-history-table-wrap,
+:root[data-visual-background='true'] .mobile-student-card,
+:root[data-visual-background='true'] .mobile-lookup-card {
+  backdrop-filter: blur(3px);
 }
 
 @media (max-width: 600px) {

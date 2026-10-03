@@ -18,7 +18,7 @@ import { NewView } from './NewView';
 import { PropertyEditor } from './PropertyEditor';
 import { useDatabaseModel } from './useDatabaseModel';
 import { ViewSettings } from './ViewSettings';
-export function Database({ kind }: { kind: DatabaseKind }) {
+export function Database({ kind, mobile = false }: { kind: DatabaseKind; mobile?: boolean }) {
   const [query, setQuery] = useState('');
   const [settings, setSettings] = useState<string>();
   const [propertyEditor, setPropertyEditor] = useState<CustomProperty | null | undefined>();
@@ -84,6 +84,7 @@ export function Database({ kind }: { kind: DatabaseKind }) {
         onSettings={setSettings}
         onNew={setNewRow}
         tableProps={{
+          mobile,
           model,
           actions,
           selected,

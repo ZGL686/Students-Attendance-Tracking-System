@@ -10,7 +10,9 @@ import { CellDisplay, PropertyIcon, ValueEditor } from './Cells';
 import { ColumnMenu } from './ColumnMenu';
 import { calculationNames } from './labels';
 import type { DatabaseModel } from './useDatabaseModel';
+import { MobileDatabaseRows } from './MobileDatabaseRows';
 export function DatabaseTable({
+  mobile = false,
   model,
   actions,
   tableRows,
@@ -19,6 +21,7 @@ export function DatabaseTable({
   onOpen: open,
   onProperty: setPropertyEditor,
 }: {
+  mobile?: boolean;
   model: DatabaseModel;
   actions: DatabaseActions;
   tableRows: DatabaseRow[];
@@ -33,6 +36,17 @@ export function DatabaseTable({
   const [columnMenu, setColumnMenu] = useState<string>();
   const columnAnchor = useRef<HTMLButtonElement>(null);
   const [dragTarget, setDragTarget] = useState('');
+  if (mobile)
+    return (
+      <MobileDatabaseRows
+        model={model}
+        actions={actions}
+        tableRows={tableRows}
+        selected={selected}
+        setSelected={setSelected}
+        onOpen={open}
+      />
+    );
   return (
     <>
       <div className="database-table-scroll">

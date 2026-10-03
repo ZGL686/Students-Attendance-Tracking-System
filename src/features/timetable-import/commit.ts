@@ -6,6 +6,28 @@ export function importFingerprint(workspace: Workspace) {
   return JSON.stringify([workspace.totalWeeks, workspace.courses]);
 }
 
+export function commitAutomaticCourseImport(
+  data: AppData,
+  targetId: string,
+  drafts: CourseDraft[],
+) {
+  const target = data.workspaces.find((workspace) => workspace.id === targetId);
+  if (!target || target.deletedAt || data.activeWorkspaceId !== targetId)
+    throw new Error('目标工作台已切换或删除，请返回目标工作台重新导入。');
+  const result = validateDrafts(drafts, target.courses, 'append', target.totalWeeks);
+  if (!result.courses.length && !result.duplicates)
+    throw new Error('未识别到可保存的完整课程，请上传包含课程名、星期、节次和周次的清晰课表。');
+  target.courses.push(...result.courses);
+  return {
+    imported: result.courses.length,
+    duplicates: result.duplicates,
+    skipped: result.issues.map((issue) => {
+      const draft = drafts.find((item) => item.id === issue.draftId);
+      return `${draft?.name || '未识别课程'}（${draft?.source || '课表'}）：${issue.message.replace('请调整或取消选中。', '本次已跳过。')}`;
+    }),
+  };
+}
+
 // Called inside AppProvider.change so validation and assignment use the same snapshot.
 export function commitCourseImport(
   data: AppData,

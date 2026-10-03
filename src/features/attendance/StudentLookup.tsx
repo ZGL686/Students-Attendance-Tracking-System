@@ -6,6 +6,7 @@ import { counts } from '../../model';
 import type { Student } from '../../model';
 import { LinkedDatabaseDetail as DatabaseDetail } from '../database/LinkedDatabaseDetail';
 import { NewStudent } from '../database/NewStudent';
+import { ImportStudentsButton } from '../database/ImportStudents';
 
 export function StudentLookup() {
   const { w } = useApp();
@@ -22,9 +23,12 @@ export function StudentLookup() {
         page="students"
         description={`${w.name} · ${w.students.length} 位同学`}
         actions={
-          <Button className="primary" onClick={() => setAdding(true)}>
-            添加学生
-          </Button>
+          <>
+            <ImportStudentsButton />
+            <Button className="primary" onClick={() => setAdding(true)}>
+              添加学生
+            </Button>
+          </>
         }
       />
       <label className="mobile-student-search">
@@ -57,6 +61,14 @@ export function StudentLookup() {
                   {count} 条记录
                 </Button>
               </div>
+              <dl className="phone-student-counts">
+                {w.categories.map((category) => (
+                  <div key={category.id}>
+                    <dt>{category.label}</dt>
+                    <dd>{totals[category.id] ?? 0}</dd>
+                  </div>
+                ))}
+              </dl>
             </article>
           );
         })}
@@ -67,7 +79,7 @@ export function StudentLookup() {
             text={
               w.students.length
                 ? '检查姓名或学号后再试。'
-                : '可直接添加学生，或从全部功能导入学生名单。'
+                : '可点击上方“添加学生”或“导入学生名单”。'
             }
           />
         )}

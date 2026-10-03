@@ -1,123 +1,14 @@
-import { Check, Image, Monitor, Moon, Sun, MousePointer2, RotateCcw, Sparkles } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Check, Monitor, Moon, Sun, MousePointer2, RotateCcw, Sparkles } from 'lucide-react';
 import { Button, ChoiceCards, IconButton } from '../components/ui';
-import { prepareWallpaper } from './wallpaper';
 import { usePreferences } from './PreferencesProvider';
 import { defaultGlassTransparency, defaultPreferences, fontOptions, themeOptions } from './model';
 import { ThemeGallery } from '../features/themes/ThemeGallery';
 
 export function AppearanceSettings() {
   const { preferences, setPreferences, storageError } = usePreferences();
-  const wallpaperInput = useRef<HTMLInputElement>(null);
-  const [wallpaperBusy, setWallpaperBusy] = useState(false);
-  const [wallpaperError, setWallpaperError] = useState('');
-  const glassTransparency = preferences.glassTransparency ?? defaultGlassTransparency;
-
-  async function importWallpaper(file?: File) {
-    if (!file) return;
-    setWallpaperBusy(true);
-    setWallpaperError('');
-    try {
-      setPreferences({ wallpaper: await prepareWallpaper(file) });
-    } catch (error) {
-      setWallpaperError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setWallpaperBusy(false);
-    }
-  }
-
   return (
     <div className="appearance-settings">
       <ThemeGallery />
-      <section className="appearance-section wallpaper-section">
-        <div className="appearance-heading">
-          <div>
-            <h3>自定义壁纸</h3>
-            <p>从手机相册或电脑中选择图片，壁纸只保存在这台设备。</p>
-          </div>
-        </div>
-        <div
-          className="wallpaper-preview"
-          role="img"
-          aria-label={preferences.wallpaper ? '当前壁纸预览' : '壁纸预览'}
-        >
-          <div
-            className="wallpaper-preview-image"
-            aria-hidden="true"
-            style={
-              preferences.wallpaper
-                ? { backgroundImage: `url("${preferences.wallpaper}")` }
-                : undefined
-            }
-          />
-          <div className="wallpaper-preview-panel">
-            <strong>Ludian</strong>
-            <span>课程表 · 考勤记录 · 学生数据库</span>
-          </div>
-          {!preferences.wallpaper && <span className="wallpaper-empty">导入图片后在此预览</span>}
-        </div>
-        <div className="wallpaper-actions">
-          <Button
-            className="primary"
-            disabled={wallpaperBusy}
-            onClick={() => wallpaperInput.current?.click()}
-          >
-            <Image size={16} />
-            {wallpaperBusy ? '正在处理图片…' : '选择壁纸图片'}
-          </Button>
-          {preferences.wallpaper && (
-            <Button
-              disabled={wallpaperBusy}
-              onClick={() => {
-                setPreferences({ wallpaper: '', glassTransparency: defaultGlassTransparency });
-                setWallpaperError('');
-              }}
-            >
-              移除壁纸
-            </Button>
-          )}
-          <input
-            ref={wallpaperInput}
-            type="file"
-            accept="image/*"
-            aria-label="选择壁纸图片"
-            hidden
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = '';
-              void importWallpaper(file);
-            }}
-          />
-        </div>
-        {wallpaperError && (
-          <p className="form-error" role="alert">
-            {wallpaperError}
-          </p>
-        )}
-        <label className="glass-control">
-          <span>
-            玻璃透明度 <strong>{glassTransparency}%</strong>
-          </span>
-          <input
-            type="range"
-            aria-label="玻璃透明度"
-            min={0}
-            max={30}
-            step={1}
-            value={glassTransparency}
-            disabled={!preferences.wallpaper || wallpaperBusy}
-            onChange={(event) => setPreferences({ glassTransparency: Number(event.target.value) })}
-          />
-          <span className="glass-control-hints" aria-hidden="true">
-            <small>文字更清晰</small>
-            <small>壁纸更透显</small>
-          </span>
-        </label>
-        <p className="appearance-note">
-          图片会自动压缩后保存在设备偏好中，不会进入考勤数据或完整备份。透明度最高为
-          30%，让文字底板保留足够对比度。
-        </p>
-      </section>
       <section className="appearance-section">
         <div className="appearance-heading">
           <div>

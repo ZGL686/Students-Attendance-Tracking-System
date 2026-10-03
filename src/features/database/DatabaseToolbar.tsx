@@ -17,6 +17,7 @@ import { uid } from '../../model';
 
 import { layoutIcons } from './labels';
 import type { DatabaseModel } from './useDatabaseModel';
+import { ImportStudentsButton } from './ImportStudents';
 export function DatabaseToolbar({
   model,
   query,
@@ -122,6 +123,7 @@ export function DatabaseToolbar({
           >
             <Download size={17} />
           </IconButton>
+          {kind === 'students' && <ImportStudentsButton />}
           <Button className="primary new-row-button" onClick={() => setNewRow(true)}>
             新建
             <ChevronDown size={13} />

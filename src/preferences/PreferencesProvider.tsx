@@ -26,7 +26,9 @@ function apply(p: Preferences) {
         : 'light'
       : p.theme;
   root.style.setProperty('--base-font-size', `${p.fontSize}px`);
-  applyThemePack(findBuiltinTheme(p.themePackId), root.dataset.theme === 'dark');
+  const builtin = findBuiltinTheme(p.themePackId);
+  applyThemePack(builtin, root.dataset.theme === 'dark');
+  const background = p.themePackId === 'custom' ? p.wallpaper : builtin?.imageUrl;
   const palette = getComputedStyle(root);
   for (const [source, target] of [
     ['--surface', '--surface-base'],
@@ -36,7 +38,7 @@ function apply(p: Preferences) {
   ]) {
     root.style.setProperty(target, palette.getPropertyValue(source).trim());
   }
-  const hasWallpaper = !!p.wallpaper;
+  const hasWallpaper = !!background;
   const transparency = hasWallpaper ? (p.glassTransparency ?? defaultGlassTransparency) : 0;
   const surfaceColor = (base: string) =>
     hasWallpaper
@@ -46,9 +48,10 @@ function apply(p: Preferences) {
   root.style.setProperty('--surface-soft', surfaceColor('--surface-soft-base'));
   root.style.setProperty('--surface-today', surfaceColor('--surface-today-base'));
   root.style.setProperty('--sidebar', surfaceColor('--sidebar-base'));
-  if (p.wallpaper) {
-    root.dataset.userWallpaper = 'true';
-    root.style.setProperty('--user-wallpaper-image', `url("${p.wallpaper}")`);
+  root.style.setProperty('--glass-opacity', String((100 - transparency) / 100));
+  if (background) {
+    root.dataset.visualBackground = 'true';
+    root.style.setProperty('--user-wallpaper-image', `url("${background}")`);
     root.style.backgroundColor = 'transparent';
     root.style.backgroundImage = 'var(--user-wallpaper-image)';
     root.style.backgroundPosition = 'center';
@@ -56,7 +59,7 @@ function apply(p: Preferences) {
     root.style.backgroundAttachment = 'fixed';
     root.style.backgroundRepeat = 'no-repeat';
   } else {
-    delete root.dataset.userWallpaper;
+    delete root.dataset.visualBackground;
     root.style.removeProperty('--user-wallpaper-image');
     for (const property of [
       'background-color',

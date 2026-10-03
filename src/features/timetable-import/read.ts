@@ -1,4 +1,4 @@
-import { checkAborted, createEmptyDraft } from './model';
+import { checkAborted } from './model';
 import type { ImportResult, ImportSource, ReadOptions } from './model';
 
 export const importAccept = '.png,.jpg,.jpeg,.webp,.bmp,.xlsx,.csv,.pdf';
@@ -9,6 +9,7 @@ function kind(file: File): 'image' | 'excel' | 'pdf' {
   if (!file.size) throw new Error('文件内容为空，请重新选择。');
   const extension = file.name.toLowerCase().split('.').pop();
   if (['png', 'jpg', 'jpeg', 'webp', 'bmp'].includes(extension ?? '')) return 'image';
+  if (file.type.startsWith('image/')) return 'image';
   if (extension === 'xlsx' || extension === 'csv') return 'excel';
   if (extension === 'pdf') return 'pdf';
   if (extension === 'xls') throw new Error('暂不支持旧版 .xls，请在 Excel 中另存为 .xlsx 后导入。');
@@ -57,7 +58,7 @@ export async function readImportFile(file: File, options: ReadOptions = {}): Pro
         result = {
           drafts: await ocr.recognize(canvas, file.name),
           sources: [{ index: 0, label: '课表图片' }],
-          warnings: ['图片识别可能有遗漏，请对照原图核对课程名称、星期、节次和周次。'],
+          warnings: ['图片已在本机识别并自动导入；可在课程表查看结果。'],
         };
       } finally {
         await ocr?.close();
@@ -69,11 +70,8 @@ export async function readImportFile(file: File, options: ReadOptions = {}): Pro
   }
   checkAborted(options.signal);
   if (!result.drafts.length) {
-    const draft = createEmptyDraft(file.name);
-    draft.issues.push('未识别到可导入的课程，请手动补充或换一份更清晰的课表。');
-    result.drafts.push(draft);
-    result.warnings.push('没有识别到完整课程，已提供空白草稿供补充。');
+    throw new Error('没有识别到课程，请换一张更清晰的课表图片或上传 Excel / CSV 文件。');
   }
-  options.onProgress?.({ stage: '识别完成，请核对课程草稿。', progress: 1 });
+  options.onProgress?.({ stage: '识别完成，正在自动导入。', progress: 1 });
   return result;
 }

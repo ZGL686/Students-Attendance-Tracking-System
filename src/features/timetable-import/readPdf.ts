@@ -141,8 +141,9 @@ export async function readPdf(
           }
           drafts.push(...(recognized.length ? recognized : extracted));
           if (!recognized.length && !extracted.length)
-            warnings.push(`第 ${source.index + 1} 页未识别到课程，请手动补充。`);
-          else warnings.push(`第 ${source.index + 1} 页使用了离线图片识别，请核对课程信息。`);
+            warnings.push(`第 ${source.index + 1} 页未识别到课程，可换成清晰图片重新导入。`);
+          else
+            warnings.push(`第 ${source.index + 1} 页已使用离线图片识别；可在课程表查看导入结果。`);
         } finally {
           canvas.width = 0;
           canvas.height = 0;

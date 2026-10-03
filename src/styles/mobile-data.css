@@ -1,0 +1,184 @@
+.phone-database-rows {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.phone-student-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.phone-student-counts > div {
+  min-width: 0;
+  padding: 6px;
+  background: var(--surface-soft);
+  border-radius: 6px;
+  text-align: center;
+}
+.phone-student-counts dt {
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.phone-student-counts dd {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.phone-database-select-all {
+  margin: 10px 0 0;
+}
+.phone-database-row {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.phone-database-row.row-selected {
+  border-color: var(--blue);
+}
+.phone-database-row header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 6px;
+}
+.phone-database-row header button {
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
+  text-align: left;
+  white-space: normal;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+}
+.phone-database-row header small {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--blue);
+  flex-shrink: 0;
+}
+.phone-database-properties {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  margin: 0;
+  padding: 12px;
+}
+.phone-database-properties > div {
+  min-width: 0;
+}
+.phone-database-properties dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.phone-database-properties dd {
+  margin: 0;
+}
+.phone-database-properties .cell-button {
+  width: 100%;
+  padding: 3px 0;
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.phone-database-properties .cell-tags {
+  flex-wrap: wrap;
+}
+.phone-database-properties .cell-button > span {
+  min-width: 0;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.phone-database-properties .tag {
+  white-space: normal;
+}
+.phone-database-properties .cell-editor {
+  position: static;
+  min-width: 0;
+  width: 100%;
+}
+.phone-database-properties > div:has(.cell-editor) {
+  grid-column: 1 / -1;
+}
+.phone-database-calculations {
+  display: grid;
+  gap: 8px;
+}
+.phone-database-calculations label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(30px, auto);
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+body[data-mobile='true'] .database-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: visible;
+}
+body[data-mobile='true'] .board-column {
+  min-width: 0;
+}
+body[data-mobile='true'] .database-list {
+  overflow: visible;
+}
+body[data-mobile='true'] .database-list-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 6px;
+  text-align: left;
+  white-space: normal;
+}
+body[data-mobile='true'] .database-list-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+body[data-mobile='true'] .database-list-row > span {
+  grid-column: 2;
+  max-width: none;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+body[data-mobile='true'] .database-gallery {
+  grid-template-columns: minmax(0, 1fr);
+}
+body[data-mobile='true'] .card-properties > div {
+  min-width: 0;
+  overflow: visible;
+  align-items: flex-start;
+}
+body[data-mobile='true'] .card-properties > div > span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+body[data-mobile='true'] .database-footer {
+  flex-wrap: wrap;
+}
+body[data-mobile='true'] .mobile-lookup-identity > div strong,
+body[data-mobile='true'] .mobile-lookup-identity small {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+.import-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.import-skipped {
+  overflow-wrap: anywhere;
+  max-height: 35vh;
+  overflow-y: auto;
+}
+@media (max-width: 600px) {
+  .import-picker-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

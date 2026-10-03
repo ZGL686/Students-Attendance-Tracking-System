@@ -17,9 +17,8 @@ export function MobileDatabase({ kind }: { kind: DatabaseKind }) {
           完整数据库
         </Button>
       </div>
-      {full && <p className="phone-scroll-hint">左右滑动查看全部列，也可切换看板、画廊等视图。</p>}
       {full ? (
-        <Database kind={kind} />
+        <Database kind={kind} mobile />
       ) : kind === 'students' ? (
         <StudentLookup />
       ) : (

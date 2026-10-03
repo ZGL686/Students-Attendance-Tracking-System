@@ -30,10 +30,11 @@ export type Preferences = {
   fontSize: 14 | 15 | 16;
   motion: 'system' | 'reduced';
   sidebarCollapsed: boolean;
+  visualThemeVersion?: 1;
   wallpaper?: string;
   glassTransparency?: number;
 };
-export const defaultGlassTransparency = 14;
+export const defaultGlassTransparency = 35;
 export const preferenceKey = 'ludian.preferences.v2';
 export const legacyPreferenceKey = 'ludian.preferences.v1';
 export const defaultPreferences: Preferences = {
@@ -55,15 +56,24 @@ export function parsePreferences(raw: string | null): Preferences {
     if (!p || typeof p !== 'object' || !('version' in p) || (p.version !== 1 && p.version !== 2))
       return { ...defaultPreferences };
     const value = p as Record<string, unknown>;
+    const wallpaper =
+      typeof value.wallpaper === 'string' &&
+      value.wallpaper.length <= 2_850_000 &&
+      /^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(value.wallpaper)
+        ? value.wallpaper
+        : '';
     return {
       version: 2,
+      visualThemeVersion: 1,
       theme: themeOptions.some((t) => t.id === value.theme) ? (value.theme as ThemeId) : 'system',
       themePackId:
-        value.version === 2 &&
-        typeof value.themePackId === 'string' &&
-        /^[a-z][a-z0-9-]{0,63}$/.test(value.themePackId)
-          ? value.themePackId
-          : 'classic',
+        wallpaper && value.visualThemeVersion !== 1
+          ? 'custom'
+          : value.version === 2 &&
+              typeof value.themePackId === 'string' &&
+              /^[a-z][a-z0-9-]{0,63}$/.test(value.themePackId)
+            ? value.themePackId
+            : 'classic',
       themePackVersion:
         value.version === 2 &&
         typeof value.themePackVersion === 'string' &&
@@ -78,15 +88,11 @@ export function parsePreferences(raw: string | null): Preferences {
         : 14,
       motion: value.motion === 'reduced' ? 'reduced' : 'system',
       sidebarCollapsed: value.sidebarCollapsed === true,
-      ...(typeof value.wallpaper === 'string' &&
-      value.wallpaper.length <= 2_850_000 &&
-      /^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(value.wallpaper)
-        ? { wallpaper: value.wallpaper }
-        : {}),
+      ...(wallpaper ? { wallpaper } : {}),
       ...(typeof value.glassTransparency === 'number' &&
       Number.isInteger(value.glassTransparency) &&
       value.glassTransparency >= 0 &&
-      value.glassTransparency <= 30
+      value.glassTransparency <= 70
         ? { glassTransparency: value.glassTransparency }
         : {}),
     };
