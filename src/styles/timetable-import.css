@@ -31,6 +31,50 @@
   background: var(--surface-soft);
   gap: 12px;
 }
+.import-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.import-pick-button {
+  justify-self: start;
+  min-height: 48px;
+  gap: 10px;
+}
+.quick-course-entry {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 18px 0;
+  background: var(--surface-soft);
+}
+.quick-course-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+}
+.quick-course-copy h3 {
+  margin: 0 0 5px;
+  font-size: 1rem;
+  color: var(--text);
+}
+.quick-course-copy p {
+  margin: 0;
+  line-height: 1.7;
+}
+.quick-course-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.quick-course-entry .appearance-note {
+  margin: 0;
+}
 .import-sources,
 .import-mode {
   border: 1px solid var(--border);
@@ -146,6 +190,9 @@
 @media (max-width: 650px) {
   .import-time-grid,
   .import-draft .form-grid.three {
+    grid-template-columns: 1fr 1fr;
+  }
+  .quick-course-fields {
     grid-template-columns: 1fr 1fr;
   }
   .import-steps {

@@ -28,6 +28,42 @@
   backdrop-filter: blur(3px);
 }
 
+/* Keep every surface carrying recorded data opaque. The glass slider only
+   affects the surrounding app chrome and decorative areas. */
+:root[data-visual-background='true']
+  :is(
+    .attendance-context,
+    .table-container,
+    .table-container > .student-table,
+    .database-body,
+    .database-table-scroll,
+    .database-table,
+    .database-card,
+    .database-list-row,
+    .database-calendar,
+    .calendar,
+    .mobile-history-table-wrap,
+    .mobile-student-card,
+    .mobile-lookup-card,
+    .mobile-history-card,
+    .phone-database-row,
+    .record-item,
+    .related-record,
+    .report-card,
+    .report-filters,
+    .database-peek,
+    .modal,
+    .ui-popover
+  ) {
+  background-color: var(--surface-base) !important;
+  background-image: none !important;
+  opacity: 1;
+}
+
+:root[data-visual-background='true'] :is(input, select, textarea) {
+  background-color: var(--surface-base) !important;
+}
+
 @media (max-width: 600px) {
   .wallpaper-actions > button {
     flex: 1;

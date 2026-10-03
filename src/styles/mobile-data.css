@@ -168,9 +168,13 @@ body[data-mobile='true'] .mobile-lookup-identity small {
   overflow-wrap: anywhere;
 }
 .import-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.import-picker-grid > small {
+  flex: 1 1 230px;
 }
 .import-skipped {
   overflow-wrap: anywhere;
@@ -178,7 +182,7 @@ body[data-mobile='true'] .mobile-lookup-identity small {
   overflow-y: auto;
 }
 @media (max-width: 600px) {
-  .import-picker-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .import-picker-grid > small {
+    flex-basis: 100%;
   }
 }

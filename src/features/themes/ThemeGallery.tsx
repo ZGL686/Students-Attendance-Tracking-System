@@ -127,7 +127,7 @@ export function ThemeGallery() {
         </span>
       </label>
       <p className="appearance-note">
-        对内置和自定义主题同时生效。提高透明度，卡片后方的主题图片会更清楚；切换主题会保留此设置。
+        透明度只调整页面装饰区域。考勤、学生、课程、记录及输入面板始终保持不透明，保证文字清晰；主题图片仍会显示在页面背景中。切换主题会保留此设置。
       </p>
       <div className="pack-filter" role="group" aria-label="主题风格">
         <Button aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>

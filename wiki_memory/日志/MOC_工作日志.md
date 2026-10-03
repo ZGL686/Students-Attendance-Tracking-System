@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-03 | feature | 简化移动端课表选择；修复识别失败时只有报错、没有可继续操作的问题；让考勤等文字记录在自定义壁纸下保持清晰。 | archived | ludian-simple-course-import-and-opaque-records | [[日志/2026-10-03-Ludian课表导入兜底与记录不透明.md|Ludian 课表导入兜底与记录不透明]] |
 | 2026-10-03 | feature | 按用户提供的改进说明优化手机课表、课程导入、考勤记录显示，并增加自定义壁纸与玻璃透明度。 | archived | ludian-mobile-timetable-import-wallpaper | [[日志/2026-10-03-Ludian手机课表导入与壁纸改进.md|2026-10-03｜Ludian 手机课表、导入与壁纸改进]] |
 | 2026-10-03 | feature | 统一自定义与内置主题；按用户视频消除手机学生数据库的横向滑动；简化课程导入；在学生页直接导入名单，交付 0.5.4 安装包。 | archived | ludian-unified-themes-direct-mobile-data | [[日志/2026-10-03-Ludian主题切换与手机数据直显.md|Ludian 主题切换与手机数据直显]] |
 | 2026-10-03 | maintenance | 补齐原生构建环境，将本轮功能改进打入 Windows 与 Android，并覆盖用户本地最新发行文件。 | archived | ludian-0-5-3-installer-release | [[日志/2026-10-03-Ludian-0.5.3本地安装包发布.md|Ludian 0.5.3 本地安装包发布]] |
