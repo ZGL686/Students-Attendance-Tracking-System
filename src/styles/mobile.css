@@ -47,12 +47,12 @@
 .app-shell[data-mobile='true'] .mobile-navigation {
   grid-area: mobile-nav;
   position: relative;
-  z-index: 5;
+  z-index: 20;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   min-height: 58px;
   padding: 4px max(6px, env(safe-area-inset-right, 0px))
-    calc(4px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+    calc(6px + max(env(safe-area-inset-bottom, 0px), 18px)) max(6px, env(safe-area-inset-left, 0px));
   border-top: 1px solid var(--line);
   background: var(--surface);
 }
@@ -84,7 +84,12 @@
 }
 
 .app-shell[data-mobile='true'] .page-content {
-  padding: 18px 15px calc(26px + env(safe-area-inset-bottom, 0px));
+  padding: 18px 15px calc(88px + max(env(safe-area-inset-bottom, 0px), 18px));
+}
+
+.app-shell[data-mobile='true'] .main-scroll {
+  min-height: 0;
+  overscroll-behavior: contain;
 }
 
 .app-shell[data-mobile='true'] .page-heading {
@@ -124,6 +129,10 @@
 .app-shell[data-mobile='true'] .calendar,
 .app-shell[data-mobile='true'] .calendar-footer,
 .app-shell[data-mobile='true'] .mobile-table-footer {
+  display: none;
+}
+
+.app-shell[data-mobile='true'] .overview-strip {
   display: none;
 }
 
@@ -301,8 +310,7 @@
 }
 
 .mobile-student-card,
-.mobile-lookup-card,
-.mobile-history-card {
+.mobile-lookup-card {
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--line);
@@ -431,35 +439,6 @@
   margin: 0 0 10px;
   color: var(--muted);
   font-size: 0.8rem;
-}
-
-.mobile-history-primary {
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.mobile-history-primary > div {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-}
-
-.mobile-history-primary .tag {
-  flex-shrink: 0;
-}
-
-.mobile-history-course {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 9px 0;
-}
-
-.mobile-history-course span,
-.mobile-history-course small {
-  color: var(--muted);
-  font-size: 0.8rem;
-  overflow-wrap: anywhere;
 }
 
 .mobile-history-card.voided {

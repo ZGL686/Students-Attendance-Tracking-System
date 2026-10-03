@@ -30,7 +30,10 @@ export type Preferences = {
   fontSize: 14 | 15 | 16;
   motion: 'system' | 'reduced';
   sidebarCollapsed: boolean;
+  wallpaper?: string;
+  glassTransparency?: number;
 };
+export const defaultGlassTransparency = 14;
 export const preferenceKey = 'ludian.preferences.v2';
 export const legacyPreferenceKey = 'ludian.preferences.v1';
 export const defaultPreferences: Preferences = {
@@ -75,6 +78,17 @@ export function parsePreferences(raw: string | null): Preferences {
         : 14,
       motion: value.motion === 'reduced' ? 'reduced' : 'system',
       sidebarCollapsed: value.sidebarCollapsed === true,
+      ...(typeof value.wallpaper === 'string' &&
+      value.wallpaper.length <= 2_850_000 &&
+      /^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(value.wallpaper)
+        ? { wallpaper: value.wallpaper }
+        : {}),
+      ...(typeof value.glassTransparency === 'number' &&
+      Number.isInteger(value.glassTransparency) &&
+      value.glassTransparency >= 0 &&
+      value.glassTransparency <= 30
+        ? { glassTransparency: value.glassTransparency }
+        : {}),
     };
   } catch {
     return { ...defaultPreferences };

@@ -1,5 +1,5 @@
 import { Check, Search, Undo2 } from 'lucide-react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Button, Empty, PageHeading, Tag } from '../../components/ui';
 import { useApp } from '../../context';
 import { LinkedDatabaseDetail as DatabaseDetail } from '../database/LinkedDatabaseDetail';
@@ -39,51 +39,75 @@ export function RecordHistory() {
           {showVoided ? '隐藏已撤销' : '显示已撤销'}
         </Button>
       </div>
-      <div className="mobile-history-list">
-        {records.map((record) => {
-          const student = students.get(record.studentId);
-          const category = categories.get(record.category);
-          return (
-            <article
-              className={`mobile-history-card ${record.voided ? 'voided' : ''}`}
-              key={record.id}
-            >
-              <div className="mobile-history-primary">
-                <div>
-                  <strong>{student?.name ?? '名单中已移除的学生'}</strong>
-                  <small>
-                    {student?.number ?? '学号不可用'} · {record.date} {record.time}
-                  </small>
-                </div>
-                <Tag color={category?.color}>
-                  {record.voided ? '已撤销' : (category?.label ?? '类型已移除')}
-                </Tag>
-              </div>
-              <div className="mobile-history-course">
-                <strong>{record.courseName}</strong>
-                <span>
-                  {record.room || '未填写教室'}
-                  {record.teacher ? ` · ${record.teacher}` : ''}
-                </span>
-                {record.note && <small>{record.note}</small>}
-              </div>
-              <Button onClick={() => setEditing(record.id)}>查看 / 编辑记录</Button>
-              <Button
-                className="text-button"
-                disabled={busy}
-                onClick={() =>
-                  update(
-                    (workspace) => setRecordsVoided(workspace, [record.id], !record.voided),
-                    record.voided ? '记录已恢复' : '记录已撤销',
-                  )
-                }
-              >
-                {record.voided ? <Undo2 size={15} /> : <Check size={15} />}
-                {record.voided ? '恢复记录' : '撤销记录'}
-              </Button>
-            </article>
-          );
-        })}
+      <div className="mobile-history-table-wrap">
+        {records.length > 0 && (
+          <table className="mobile-history-table" aria-label="考勤记录">
+            <colgroup>
+              <col style={{ width: '42%' }} />
+              <col style={{ width: '29%' }} />
+              <col style={{ width: '29%' }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">考勤记录</th>
+                <th scope="col">同学</th>
+                <th scope="col">登记时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((record) => {
+                const student = students.get(record.studentId);
+                const category = categories.get(record.category);
+                return (
+                  <Fragment key={record.id}>
+                    <tr className={`mobile-history-card ${record.voided ? 'voided' : ''}`}>
+                      <td className="mobile-history-record-cell">
+                        <Tag color={category?.color}>
+                          {record.voided ? '已撤销' : (category?.label ?? '类型已移除')}
+                        </Tag>
+                        <strong>{record.courseName}</strong>
+                        <small>{record.room || '未填写教室'}</small>
+                        {record.teacher && <small>{record.teacher}</small>}
+                        {record.note && <p>{record.note}</p>}
+                      </td>
+                      <td className="mobile-history-student-cell">
+                        <strong>{student?.name ?? '名单中已移除的学生'}</strong>
+                        <small>{student?.number ?? '学号不可用'}</small>
+                      </td>
+                      <td className="mobile-history-time-cell">
+                        <time dateTime={`${record.date}T${record.time}`}>
+                          {record.date}
+                          <small>{record.time}</small>
+                        </time>
+                      </td>
+                    </tr>
+                    <tr className="mobile-history-actions">
+                      <td colSpan={3}>
+                        <div className="mobile-history-action-buttons">
+                          <Button onClick={() => setEditing(record.id)}>查看 / 编辑记录</Button>
+                          <Button
+                            className="text-button"
+                            disabled={busy}
+                            onClick={() =>
+                              update(
+                                (workspace) =>
+                                  setRecordsVoided(workspace, [record.id], !record.voided),
+                                record.voided ? '记录已恢复' : '记录已撤销',
+                              )
+                            }
+                          >
+                            {record.voided ? <Undo2 size={15} /> : <Check size={15} />}
+                            {record.voided ? '恢复记录' : '撤销记录'}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
         {!records.length && (
           <Empty
             icon={<Check size={28} />}

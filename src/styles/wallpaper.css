@@ -1,0 +1,35 @@
+:root[data-user-wallpaper='true'] .app-main {
+  background: transparent !important;
+  backdrop-filter: blur(4px);
+}
+
+:root[data-user-wallpaper='true'] .app-main::before {
+  display: none !important;
+}
+
+:root[data-user-wallpaper='true'] .sidebar,
+:root[data-user-wallpaper='true'] .topbar,
+:root[data-user-wallpaper='true'] .mobile-navigation,
+:root[data-user-wallpaper='true'] .page-heading {
+  background: var(--surface) !important;
+  backdrop-filter: blur(10px);
+}
+
+:root[data-user-wallpaper='true'] .page-heading {
+  isolation: auto;
+}
+
+:root[data-user-wallpaper='true'] .modal,
+:root[data-user-wallpaper='true'] .ui-popover,
+:root[data-user-wallpaper='true'] .database-peek,
+:root[data-user-wallpaper='true'] .mobile-history-table-wrap,
+:root[data-user-wallpaper='true'] .mobile-student-card,
+:root[data-user-wallpaper='true'] .mobile-lookup-card {
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 600px) {
+  .wallpaper-actions > button {
+    flex: 1;
+  }
+}

@@ -226,11 +226,136 @@ body[data-mobile='true'] .toolbar-right .search-box {
 }
 .phone-calendar-scroll {
   max-width: 100%;
-  overflow-x: auto;
+  overflow: visible;
 }
 body[data-mobile='true'] .phone-calendar-scroll .calendar {
   display: grid;
-  min-width: 720px;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 34px repeat(7, minmax(0, 1fr));
+  grid-template-rows: 42px repeat(10, 52px);
+}
+body[data-mobile='true'] .phone-calendar-scroll .day-heading {
+  gap: 2px;
+  padding: 2px 1px;
+  font-size: 0.68rem;
+}
+body[data-mobile='true'] .phone-calendar-scroll .day-heading b {
+  width: 23px;
+  height: 23px;
+  font-size: 0.72rem;
+}
+body[data-mobile='true'] .phone-calendar-scroll .period-label {
+  padding-inline: 0;
+}
+body[data-mobile='true'] .phone-calendar-scroll .period-label b {
+  font-size: 0.76rem;
+}
+body[data-mobile='true'] .phone-calendar-scroll .period-label span {
+  font-size: 0.58rem;
+  white-space: nowrap;
+}
+body[data-mobile='true'] .phone-calendar-scroll .course-card {
+  min-width: 0;
+  min-height: 0;
+  gap: 2px;
+  margin: 1px;
+  padding: 3px 2px;
+  border-left-width: 2px;
+}
+body[data-mobile='true'] .phone-calendar-scroll .course-card strong {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: clamp(0.55rem, 2.7vw, 0.68rem);
+  line-height: 1.2;
+  text-align: center;
+}
+body[data-mobile='true'] .phone-calendar-scroll .course-card > span,
+body[data-mobile='true'] .phone-calendar-scroll .course-card > small {
+  display: none;
+}
+body[data-mobile='true'] .mobile-history-table-wrap {
+  width: 100%;
+  overflow-x: clip;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+body[data-mobile='true'] .mobile-history-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.78rem;
+}
+body[data-mobile='true'] .mobile-history-table th {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+body[data-mobile='true'] .mobile-history-table th:not(:first-child),
+body[data-mobile='true'] .mobile-history-table td:not(:first-child) {
+  border-left: 1px solid var(--line);
+}
+body[data-mobile='true'] .mobile-history-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+body[data-mobile='true'] .mobile-history-record-cell,
+body[data-mobile='true'] .mobile-history-student-cell,
+body[data-mobile='true'] .mobile-history-time-cell {
+  line-height: 1.45;
+}
+body[data-mobile='true'] .mobile-history-record-cell > strong,
+body[data-mobile='true'] .mobile-history-student-cell > strong,
+body[data-mobile='true'] .mobile-history-time-cell time {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+body[data-mobile='true'] .mobile-history-record-cell .tag {
+  max-width: 100%;
+  white-space: normal;
+  font-size: 0.68rem;
+}
+body[data-mobile='true'] .mobile-history-record-cell small,
+body[data-mobile='true'] .mobile-history-student-cell small,
+body[data-mobile='true'] .mobile-history-time-cell small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+body[data-mobile='true'] .mobile-history-record-cell p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+body[data-mobile='true'] .mobile-history-actions td {
+  padding: 0 6px 7px;
+  border-bottom: 1px solid var(--border);
+}
+body[data-mobile='true'] .mobile-history-action-buttons {
+  display: flex;
+  gap: 6px;
+}
+body[data-mobile='true'] .mobile-history-action-buttons button {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding-inline: 5px;
+  font-size: 0.72rem;
+  white-space: normal;
 }
 body[data-mobile='true'] .peek-property {
   grid-template-columns: 100px minmax(0, 1fr);

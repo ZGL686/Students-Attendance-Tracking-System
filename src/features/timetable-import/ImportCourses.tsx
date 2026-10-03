@@ -12,7 +12,7 @@ type Step = 'file' | 'review' | 'confirm';
 type Source = { index: number; label: string };
 
 export function ImportCourses({ targetId, onClose }: { targetId: string; onClose: () => void }) {
-  const { data, busy, change } = useApp();
+  const { data, busy, change, notify } = useApp();
   const target = data.workspaces.find((workspace) => workspace.id === targetId);
   const [step, setStep] = useState<Step>('file');
   const [file, setFile] = useState<File>();
@@ -86,9 +86,60 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
         },
       });
       if (controller.signal.aborted) return;
+      setProgress({ stage: '识别完成，正在自动导入课程', progress: 1 });
       setDrafts(result.drafts);
       setSelected(new Set(result.drafts.map((draft) => draft.id)));
       setWarnings(result.warnings);
+      const latestTarget = data.workspaces.find((workspace) => workspace.id === targetId);
+      if (!latestTarget || latestTarget.deletedAt || data.activeWorkspaceId !== targetId) {
+        setError('工作台已切换或删除，识别结果已保留。请返回目标工作台重新导入。');
+        setStep('review');
+        return;
+      }
+      const automatic = validateDrafts(
+        result.drafts,
+        latestTarget.courses,
+        'append',
+        latestTarget.totalWeeks,
+      );
+      const invalidIds = new Set(automatic.issues.map((issue) => issue.draftId));
+      const importable = result.drafts.filter((draft) => !invalidIds.has(draft.id));
+      if (automatic.courses.length > 0) {
+        const message = `已直接导入 ${automatic.courses.length} 门课程${
+          automatic.duplicates ? `，跳过 ${automatic.duplicates} 门重复课程` : ''
+        }${
+          automatic.issues.length ? `，另有 ${automatic.issues.length} 门信息不完整或时间冲突` : ''
+        }`;
+        const saved = await change(
+          (latest) =>
+            commitCourseImport(
+              latest,
+              targetId,
+              importable,
+              'append',
+              importFingerprint(latestTarget),
+            ),
+          message,
+        );
+        if (controller.signal.aborted) return;
+        if (saved && !automatic.issues.length) {
+          onClose();
+          return;
+        }
+        if (saved) {
+          const unresolved = result.drafts.filter((draft) => invalidIds.has(draft.id));
+          setDrafts(unresolved);
+          setSelected(new Set(unresolved.map((draft) => draft.id)));
+          setError('其余识别结果未导入，可在下方补全信息后再保存。');
+          setStep('review');
+          return;
+        }
+        setError('自动导入未完成，课程识别结果已保留，请检查后重试。');
+      } else if (!automatic.issues.length && automatic.duplicates > 0) {
+        notify(`识别完成，${automatic.duplicates} 门课程已存在，没有重复导入。`);
+        onClose();
+        return;
+      }
       setStep('review');
     } catch (reason) {
       if (!controller.signal.aborted)
@@ -133,11 +184,14 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
     >
       <div className="timetable-import">
         <ol className="import-steps" aria-label="导入步骤">
-          {(['选择文件', '检查修改', '确认保存'] as const).map((label, index) => (
+          {(step === 'file'
+            ? (['选择文件', '识别并导入'] as const)
+            : (['选择文件', '检查修改', '确认保存'] as const)
+          ).map((label, index) => (
             <li
               key={label}
               aria-current={
-                index === ['file', 'review', 'confirm'].indexOf(step) ? 'step' : undefined
+                index === (step === 'file' ? 0 : step === 'review' ? 1 : 2) ? 'step' : undefined
               }
             >
               <span>{index + 1}</span>
@@ -168,7 +222,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
               <small>支持图片、Excel .xlsx、UTF-8 CSV 和 PDF，最大 20 MB。文件仅在本机处理。</small>
             </label>
             {file && <p className="import-source">已选择：{file.name}</p>}
-            {sources.length > 0 && !processing && (
+            {sources.length > 1 && !processing && (
               <fieldset className="import-sources">
                 <legend>选择需要读取的工作表或页面</legend>
                 {sources.map((source) => (
@@ -200,7 +254,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
               </div>
             )}
             <p className="inline-note">
-              识别结果需要逐项检查。未找到的星期、节次、周次会留空，修正后才能保存。
+              识别完成后会自动追加课程并跳过重复项；只有信息缺失或时间冲突时才需要修正。
             </p>
           </>
         )}
@@ -329,7 +383,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
               disabled={processing || !sourceSelection.length || unavailable}
               onClick={() => void read()}
             >
-              识别并预览
+              识别并导入
             </Button>
           )}
           {step === 'review' && (

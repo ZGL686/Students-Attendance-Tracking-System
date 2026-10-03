@@ -38,7 +38,7 @@ export function Timetable({
   const current = weekOf(w.startDate, now.date);
   const [selected, setSelected] = useState<number | null>(null);
   const [weekPicker, setWeekPicker] = useState(false);
-  const [gridView, setGridView] = useState(false);
+  const [gridView, setGridView] = useState(mobile);
   const [detail, setDetail] = useState<Course | null>(null);
   const [editor, setEditor] = useState<Course | null | undefined>();
   const [importTarget, setImportTarget] = useState<string>();
