@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-10-03
+updated: 2026-10-07
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-07 | maintenance | 为当前最新 Android 发布代码构建签名通用 APK。 | archived | ludian-0-5-5-android-apk-release | [[日志/2026-10-07-Ludian-0.5.5-Android-APK构建.md|Ludian 0.5.5 Android APK 构建]] |
 | 2026-10-03 | feature | 简化移动端课表选择；修复识别失败时只有报错、没有可继续操作的问题；让考勤等文字记录在自定义壁纸下保持清晰。 | archived | ludian-simple-course-import-and-opaque-records | [[日志/2026-10-03-Ludian课表导入兜底与记录不透明.md|Ludian 课表导入兜底与记录不透明]] |
 | 2026-10-03 | feature | 按用户提供的改进说明优化手机课表、课程导入、考勤记录显示，并增加自定义壁纸与玻璃透明度。 | archived | ludian-mobile-timetable-import-wallpaper | [[日志/2026-10-03-Ludian手机课表导入与壁纸改进.md|2026-10-03｜Ludian 手机课表、导入与壁纸改进]] |
 | 2026-10-03 | feature | 统一自定义与内置主题；按用户视频消除手机学生数据库的横向滑动；简化课程导入；在学生页直接导入名单，交付 0.5.4 安装包。 | archived | ludian-unified-themes-direct-mobile-data | [[日志/2026-10-03-Ludian主题切换与手机数据直显.md|Ludian 主题切换与手机数据直显]] |
