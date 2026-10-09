@@ -77,7 +77,10 @@ function dayInHeader(text: string): number | undefined {
   const first = text
     .trim()
     .split(/[\n(（]/)[0]
-    .trim();
+    .trim()
+    .replace(/\s+/g, '');
+  const bareDay = first.match(/^([一二三四五六日天])(?:\d{1,2}(?:[/.\-]\d{1,2})?日?)?$/);
+  if (bareDay) return '一二三四五六日'.indexOf(bareDay[1].replace('天', '日')) + 1;
   // Bare numbers in a calendar must not be interpreted as weekday headings.
   return /^[1-7]$/.test(first) ? undefined : parseImportDay(first);
 }
@@ -182,6 +185,7 @@ function parseList(cells: GridCell[], source: string): CourseDraft[] | undefined
     )
       continue;
     const draft = createEmptyDraft(`${source} · 第 ${row + 1} 行`);
+    draft.layout = 'list';
     for (const field of ['name', 'teacher', 'room', 'weeks', 'day', 'start', 'end'] as const)
       draft[field] = read(field);
     if (draft.day) draft.day = String(parseImportDay(draft.day) ?? draft.day);
@@ -237,6 +241,8 @@ export function parseGrid(cells: GridCell[], source: string): CourseDraft[] {
       text,
       `${source} · 第 ${cell.row + 1} 行，第 ${cell.column + 1} 列`,
     );
+    draft.layout = 'grid';
+    draft.issues = draft.issues.filter((issue) => !issue.includes('未识别到周次'));
     const crossedDays = days.filter(
       (header) =>
         header.column > cell.column && header.column < cell.column + (cell.columnSpan ?? 1),
@@ -275,15 +281,26 @@ export function parsePositionedText(items: PositionedText[], source: string): Co
     .filter((item) => item.text.trim() && Number.isFinite(item.x) && Number.isFinite(item.y))
     .flatMap((item) => {
       // Some PDF generators place every weekday in one positioned text item.
-      const matches = [...item.text.matchAll(/(?:星期|周|礼拜)[一二三四五六日天]/g)];
-      if (matches.length < 2 || item.text.replace(/(?:星期|周|礼拜)[一二三四五六日天]/g, '').trim())
-        return [item];
-      return matches.map((match) => ({
-        ...item,
-        text: match[0],
-        x: item.x + (item.width * match.index) / item.text.length,
-        width: (item.width * match[0].length) / item.text.length,
-      }));
+      const prefixed = [...item.text.matchAll(/(?:星期|周|礼拜)[一二三四五六日天]/g)];
+      if (
+        prefixed.length >= 2 &&
+        !item.text.replace(/(?:星期|周|礼拜)[一二三四五六日天]/g, '').trim()
+      )
+        return prefixed.map((match) => ({
+          ...item,
+          text: match[0],
+          x: item.x + (item.width * match.index) / item.text.length,
+          width: (item.width * match[0].length) / item.text.length,
+        }));
+      const bare = item.text.replace(/\s+/g, '');
+      if (/^[一二三四五六日天]{2,7}$/.test(bare))
+        return [...bare].map((day, index) => ({
+          ...item,
+          text: day,
+          x: item.x + (item.width * index) / bare.length,
+          width: item.width / bare.length,
+        }));
+      return [item];
     });
   const rows = textRows(tokens);
   // Join adjacent pieces such as OCR's separate “星期” and “一”.
@@ -363,6 +380,8 @@ export function parsePositionedText(items: PositionedText[], source: string): Co
         raw,
         `${source} · 星期${'一二三四五六日'[heading[dayIndex].day! - 1]}`,
       );
+      draft.layout = 'grid';
+      draft.issues = draft.issues.filter((issue) => !issue.includes('未识别到周次'));
       draft.day ||= String(heading[dayIndex].day);
       draft.confidence = Math.min(...chunk.map((line) => line.confidence));
       if (draft.confidence < 75) draft.issues.push('部分文字识别置信度较低，请对照原图核对。');
@@ -417,7 +436,11 @@ export function parsePositionedText(items: PositionedText[], source: string): Co
 export function parseTextBlocks(text: string, source: string): CourseDraft[] {
   const blocks = text.split(/\n\s*\n|\n[-─]{3,}\n/).filter((block) => block.trim());
   return blocks
-    .map((block, index) => draftFromText(block, `${source} · 区域 ${index + 1}`))
+    .map((block, index) => {
+      const draft = draftFromText(block, `${source} · 区域 ${index + 1}`);
+      draft.layout = 'text';
+      return draft;
+    })
     .filter((draft) => draft.name || draft.weeks);
 }
 

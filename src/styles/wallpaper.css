@@ -9,10 +9,15 @@
 
 :root[data-visual-background='true'] .sidebar,
 :root[data-visual-background='true'] .topbar,
-:root[data-visual-background='true'] .mobile-navigation,
 :root[data-visual-background='true'] .page-heading {
   background: var(--surface) !important;
   backdrop-filter: blur(3px);
+}
+
+:root[data-visual-background='true'] .app-shell[data-mobile='true'] .mobile-navigation {
+  background-color: var(--surface-base) !important;
+  background-image: none !important;
+  backdrop-filter: none;
 }
 
 :root[data-visual-background='true'] .page-heading {

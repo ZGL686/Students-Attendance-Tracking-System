@@ -54,7 +54,7 @@
   padding: 4px max(6px, env(safe-area-inset-right, 0px))
     calc(6px + max(env(safe-area-inset-bottom, 0px), 18px)) max(6px, env(safe-area-inset-left, 0px));
   border-top: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--surface-base);
 }
 
 .mobile-navigation button {
@@ -68,7 +68,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.72rem;
 }
 

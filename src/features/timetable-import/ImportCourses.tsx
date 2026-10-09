@@ -59,17 +59,31 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       const currentTarget = data.workspaces.find((workspace) => workspace.id === targetId);
       if (!currentTarget || currentTarget.deletedAt || data.activeWorkspaceId !== targetId)
         throw new Error('目标工作台已切换或删除，请返回目标工作台重新导入。');
+      const inferredWeekDrafts = result.drafts.filter(
+        (draft) => draft.layout === 'grid' && !draft.weeks.trim(),
+      ).length;
+      const drafts = result.drafts.map((draft) =>
+        draft.layout === 'grid' && !draft.weeks.trim()
+          ? { ...draft, weeks: `1-${currentTarget.totalWeeks}` }
+          : draft,
+      );
+      const importWarnings = inferredWeekDrafts
+        ? [
+            ...result.warnings,
+            `${inferredWeekDrafts} 门课程未标注周次，已按当前学期 1–${currentTarget.totalWeeks} 周导入。`,
+          ]
+        : result.warnings;
       const ready = validateDrafts(
-        result.drafts,
+        drafts,
         currentTarget.courses,
         'append',
         currentTarget.totalWeeks,
       );
       if (!ready.courses.length && !ready.duplicates) {
-        setWarnings(result.warnings);
+        setWarnings(importWarnings);
         setSkipped(
           ready.issues.map((issue) => {
-            const draft = result.drafts.find((item) => item.id === issue.draftId);
+            const draft = drafts.find((item) => item.id === issue.draftId);
             return `${draft?.name || '未识别课程'}：${issue.message}`;
           }),
         );
@@ -83,7 +97,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       if (!ready.courses.length && ready.duplicates) {
         const message = `识别到的 ${ready.duplicates} 门课程已存在，没有重复添加。`;
         setSummary(message);
-        setWarnings(result.warnings);
+        setWarnings(importWarnings);
         notify(message);
         return;
       }
@@ -93,7 +107,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       const outcome = { imported: 0, duplicates: 0, skipped: [] as string[] };
       const saved = await change((latest) => {
         if (controller.signal.aborted) throw new Error('导入已取消。');
-        Object.assign(outcome, commitAutomaticCourseImport(latest, targetId, result.drafts));
+        Object.assign(outcome, commitAutomaticCourseImport(latest, targetId, drafts));
       }, '');
       if (controller.signal.aborted) return;
       if (!saved) {
@@ -103,9 +117,9 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       const message = `已导入 ${outcome.imported} 门课程，跳过 ${outcome.duplicates} 门重复课程${outcome.skipped.length ? `，${outcome.skipped.length} 项无法导入` : ''}。`;
       setSummary(message);
       setSkipped(outcome.skipped);
-      setWarnings(result.warnings);
+      setWarnings(importWarnings);
       notify(message);
-      if (!outcome.skipped.length && !result.warnings.length) onClose();
+      if (!outcome.skipped.length && !importWarnings.length) onClose();
     } catch (reason) {
       if (!controller.signal.aborted) {
         const message = reason instanceof Error ? reason.message : String(reason);

@@ -101,7 +101,14 @@ export async function readPdf(
         const extracted = parsePositionedText(tokens, label);
         // Text layers may be missing, contain broken CMaps, or cover only a page heading.
         if (
-          extracted.some((draft) => draft.name && draft.day && draft.weeks) &&
+          extracted.some(
+            (draft) =>
+              draft.name &&
+              draft.day &&
+              draft.start &&
+              draft.end &&
+              (draft.weeks || draft.layout === 'grid'),
+          ) &&
           !tokens.some((token) => /\uFFFD/.test(token.text))
         ) {
           drafts.push(...extracted);
@@ -120,7 +127,8 @@ export async function readPdf(
               const fields = [item.name, item.day, item.start, item.end, item.weeks].filter(
                 Boolean,
               ).length;
-              return total + (fields === 5 ? 100 : 0) + fields / Math.max(1, items.length);
+              const complete = fields >= (item.layout === 'grid' ? 4 : 5);
+              return total + (complete ? 100 : 0) + fields / Math.max(1, items.length);
             }, 0);
           // Preserve low-resolution scans first; higher-resolution rendering is
           // useful for small PDF text, but interpolation can damage existing pixels.
@@ -134,7 +142,12 @@ export async function readPdf(
             if (score(candidate) > score(recognized)) recognized = candidate;
             if (
               recognized.some(
-                (draft) => draft.name && draft.day && draft.start && draft.end && draft.weeks,
+                (draft) =>
+                  draft.name &&
+                  draft.day &&
+                  draft.start &&
+                  draft.end &&
+                  (draft.weeks || draft.layout === 'grid'),
               )
             )
               break;

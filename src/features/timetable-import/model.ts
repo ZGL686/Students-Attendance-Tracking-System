@@ -13,6 +13,7 @@ export type CourseDraft = {
   color: Course['color'];
   source: string;
   issues: string[];
+  layout?: 'grid' | 'list' | 'text';
   rawText?: string;
   confidence?: number;
 };
