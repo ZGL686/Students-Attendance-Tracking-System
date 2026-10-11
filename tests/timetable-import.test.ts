@@ -286,11 +286,10 @@ describe('spreadsheet and OCR parsing with fictional classes', () => {
     expect(result.drafts[0].name).toBe('测试二班课程');
   });
 
-  it('reports unsupported files and returns an editable blank draft for an empty result', async () => {
+  it('reports unsupported files and rejects an empty result without inventing a course', async () => {
     await expect(readImportFile(new File(['data'], '课表.xls'))).rejects.toThrow('.xlsx');
-    const result = await readImportFile(new File(['无课表内容'], '课表.csv'));
-    expect(result.drafts).toHaveLength(1);
-    expect(result.drafts[0].name).toBe('');
-    expect(result.warnings.join()).toContain('空白草稿');
+    await expect(readImportFile(new File(['无课表内容'], '课表.csv'))).rejects.toThrow(
+      '没有识别到课程',
+    );
   });
 });

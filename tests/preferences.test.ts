@@ -25,6 +25,7 @@ describe('device preferences are safe to load before application data', () => {
       ),
     ).toEqual({
       ...defaultPreferences,
+      visualThemeVersion: 1,
       font: 'handwritten',
       motion: 'reduced',
       sidebarCollapsed: true,
@@ -41,11 +42,12 @@ describe('device preferences are safe to load before application data', () => {
           sidebarCollapsed: 'false',
         }),
       ),
-    ).toEqual(defaultPreferences);
+    ).toEqual({ ...defaultPreferences, visualThemeVersion: 1 });
   });
   it('round trips all supported preferences without copying unknown fields', () => {
     const p = {
       version: 2,
+      visualThemeVersion: 1,
       font: 'system',
       theme: 'dark',
       themePackId: 'sky-hill',
@@ -68,6 +70,7 @@ describe('device preferences are safe to load before application data', () => {
     expect(parsePreferences(JSON.stringify(legacy))).toEqual({
       ...legacy,
       version: 2,
+      visualThemeVersion: 1,
       themePackId: 'classic',
       themePackVersion: '1.0.0',
     });
@@ -81,6 +84,14 @@ describe('device preferences are safe to load before application data', () => {
           themePackVersion: 'url(https://unsafe)',
         }),
       ),
-    ).toEqual(defaultPreferences);
+    ).toEqual({ ...defaultPreferences, visualThemeVersion: 1 });
+  });
+  it('migrates a legacy wallpaper once and keeps a later built-in theme selection', () => {
+    const wallpaper = 'data:image/webp;base64,UklGRg==';
+    const legacy = { ...defaultPreferences, wallpaper, glassTransparency: 40 };
+    const migrated = parsePreferences(JSON.stringify(legacy));
+    expect(migrated).toEqual({ ...legacy, visualThemeVersion: 1, themePackId: 'custom' });
+    const selected = { ...migrated, themePackId: 'sky-hill' };
+    expect(parsePreferences(JSON.stringify(selected))).toEqual(selected);
   });
 });
