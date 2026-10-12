@@ -8,7 +8,7 @@
   grid-template-rows: minmax(0, 1fr) auto;
   height: 100vh;
   height: 100dvh;
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--mobile-safe-area-top);
   overflow: hidden;
 }
 
@@ -52,7 +52,7 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
   min-height: 58px;
   padding: 4px max(6px, env(safe-area-inset-right, 0px))
-    calc(6px + max(env(safe-area-inset-bottom, 0px), 18px)) max(6px, env(safe-area-inset-left, 0px));
+    calc(6px + max(var(--mobile-safe-area-bottom), 18px)) max(6px, env(safe-area-inset-left, 0px));
   border-top: 1px solid var(--line);
   background: var(--surface-base);
 }
@@ -79,12 +79,17 @@
 
 .mobile-navigation button span {
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mobile-navigation button svg {
+  flex-shrink: 0;
 }
 
 .app-shell[data-mobile='true'] .page-content {
-  padding: 18px 15px calc(88px + max(env(safe-area-inset-bottom, 0px), 18px));
+  padding: 18px 15px 24px;
 }
 
 .app-shell[data-mobile='true'] .main-scroll {

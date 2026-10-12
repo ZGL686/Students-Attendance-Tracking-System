@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-10-11
+updated: 2026-10-12
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-12 | feature | - | archived | ludian-browser-phone-simulator | [[日志/2026-10-12-Ludian浏览器手机模拟器与安全区验收.md|Ludian 浏览器手机模拟器与安全区验收]] |
 | 2026-10-11 | maintenance | - | archived | ludian-0-5-6-source-clone-local-build | [[日志/2026-10-11-Ludian-0.5.6源码克隆与本地安装包.md|Ludian 0.5.6 源码克隆与本地安装包]] |
 | 2026-10-09 | feature | 让手机底部导航避开系统功能区并清晰可读；让图片与文件课表统一按星期列、节次行、课程格自动导入。 | archived | ludian-mobile-nav-and-timetable-grid-import | [[日志/2026-10-09-Ludian手机导航可读性与课表网格识别.md|2026-10-09｜Ludian 手机导航可读性与课表网格识别]] |
 | 2026-10-07 | maintenance | 为当前最新 Android 发布代码构建签名通用 APK。 | archived | ludian-0-5-5-android-apk-release | [[日志/2026-10-07-Ludian-0.5.5-Android-APK构建.md|Ludian 0.5.5 Android APK 构建]] |

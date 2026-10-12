@@ -106,7 +106,7 @@ body[data-mobile='true'] .modal {
   max-width: none;
   max-height: 88vh;
   max-height: 88dvh;
-  padding: 18px 15px calc(16px + env(safe-area-inset-bottom, 0px));
+  padding: 18px 15px calc(16px + var(--mobile-safe-area-bottom));
   border-radius: 12px;
 }
 
@@ -128,7 +128,7 @@ body[data-mobile='true'] .modal-actions {
   bottom: -16px;
   gap: 7px;
   margin: 16px -15px -16px;
-  padding: 10px 15px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 15px calc(10px + var(--mobile-safe-area-bottom));
   background: var(--surface);
 }
 
@@ -144,7 +144,7 @@ body[data-mobile='true'] .sync-choice-list {
 
 body[data-mobile='true'] .toast {
   right: 12px;
-  bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--mobile-navigation-height) + 12px);
   left: 12px;
   max-width: none;
   padding: 10px 12px;

@@ -12,6 +12,7 @@ import {
 } from './model';
 import { findBuiltinTheme } from '../features/themes/builtins';
 import { applyThemePack } from '../features/themes/runtime';
+import { browserPreferenceKey } from '../browserEnvironment';
 
 function apply(p: Preferences) {
   const root = document.documentElement;
@@ -75,11 +76,12 @@ function apply(p: Preferences) {
 export function initializePreferences(): Preferences {
   let preferences = { ...defaultPreferences };
   try {
-    const current = localStorage.getItem(preferenceKey);
-    const legacy = current === null ? localStorage.getItem(legacyPreferenceKey) : null;
+    const current = localStorage.getItem(browserPreferenceKey(preferenceKey));
+    const legacy =
+      current === null ? localStorage.getItem(browserPreferenceKey(legacyPreferenceKey)) : null;
     preferences = parsePreferences(current ?? legacy);
     if (current === null && legacy !== null)
-      localStorage.setItem(preferenceKey, JSON.stringify(preferences));
+      localStorage.setItem(browserPreferenceKey(preferenceKey), JSON.stringify(preferences));
   } catch {
     /* Session defaults remain usable when storage is unavailable. */
   }
@@ -118,7 +120,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     apply(next);
     set(next);
     try {
-      localStorage.setItem(preferenceKey, JSON.stringify(next));
+      localStorage.setItem(browserPreferenceKey(preferenceKey), JSON.stringify(next));
       setStorageError(false);
     } catch {
       setStorageError(true);

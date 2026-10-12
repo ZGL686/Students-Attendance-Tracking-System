@@ -20,7 +20,13 @@ type Context = {
 };
 const C = createContext<Context | null>(null);
 export const useApp = () => useContext(C)!;
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({
+  children,
+  initialData,
+}: {
+  children: ReactNode;
+  initialData?: () => AppData;
+}) {
   const [data, setData] = useState<AppData>();
   const [revision, setRevision] = useState(0);
   const [fatal, setFatal] = useState('');
@@ -37,18 +43,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         let current = await storage.load();
         if (!current) {
-          const initial = isAndroid
-            ? dataSchema.parse(
-                (() => {
-                  const workspace = newWorkspace('我的工作台');
-                  return {
-                    schemaVersion: 3,
-                    activeWorkspaceId: workspace.id,
-                    workspaces: [workspace],
-                  };
-                })(),
-              )
-            : await loadSeed();
+          const initial = initialData
+            ? initialData()
+            : isAndroid
+              ? dataSchema.parse(
+                  (() => {
+                    const workspace = newWorkspace('我的工作台');
+                    return {
+                      schemaVersion: 3,
+                      activeWorkspaceId: workspace.id,
+                      workspaces: [workspace],
+                    };
+                  })(),
+                )
+              : await loadSeed();
           current = { data: initial, revision: await storage.save(initial, 0) };
         }
         state.current = current;
@@ -58,7 +66,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setFatal(`读取数据失败，未覆盖已有数据。${String(e)}`);
       }
     })();
-  }, []);
+  }, [initialData]);
   useEffect(() => {
     if (!notice || notice.error) return;
     const t = setTimeout(() => setNotice(null), 4200);

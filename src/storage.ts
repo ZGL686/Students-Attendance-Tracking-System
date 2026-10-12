@@ -1,13 +1,14 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import type { AppData } from './model';
 import { dataSchema } from './model';
+import { browserDatabaseName, isPhonePreview } from './browserEnvironment';
 export const desktop = isTauri();
 type Stored = { revision: number; payload: string; savedAt: string };
 export type Snapshot = { revision: number; savedAt: string };
 let database: Promise<IDBDatabase> | undefined;
 function db() {
   return (database ??= new Promise((resolve, reject) => {
-    const r = indexedDB.open('guilu-attendance', 1);
+    const r = indexedDB.open(browserDatabaseName, 1);
     r.onupgradeneeded = () => {
       r.result.createObjectStore('snapshots', { keyPath: 'revision' });
     };
@@ -62,7 +63,9 @@ export async function save(data: AppData, expectedRevision: number): Promise<num
 export async function location() {
   return desktop
     ? invoke<string>('data_location')
-    : '当前浏览器的本地数据空间（与桌面版独立，可通过 JSON 备份迁移）';
+    : isPhonePreview
+      ? '手机模拟器的独立示例数据空间'
+      : '当前浏览器的本地数据空间（与桌面版独立，可通过 JSON 备份迁移）';
 }
 export async function snapshots(): Promise<Snapshot[]> {
   if (desktop) return invoke('list_snapshots');
