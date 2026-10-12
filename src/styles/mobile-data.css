@@ -106,17 +106,6 @@
 .phone-database-properties > div:has(.cell-editor) {
   grid-column: 1 / -1;
 }
-.phone-database-calculations {
-  display: grid;
-  gap: 8px;
-}
-.phone-database-calculations label {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(30px, auto);
-  gap: 8px;
-  align-items: center;
-  font-size: 0.8rem;
-}
 body[data-mobile='true'] .database-board {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

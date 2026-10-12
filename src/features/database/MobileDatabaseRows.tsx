@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Button } from '../../components/ui';
-import { calculate, displayValue } from '../../database-engine';
+import { displayValue } from '../../database-engine';
 import type { DatabaseRow } from '../../database-engine';
 import { CellDisplay, ValueEditor } from './Cells';
 import type { DatabaseActions } from './actions';
 import type { DatabaseModel } from './useDatabaseModel';
-import { calculationNames } from './labels';
 
 export function MobileDatabaseRows({
   model,
@@ -22,7 +21,7 @@ export function MobileDatabaseRows({
   setSelected: (ids: string[]) => void;
   onOpen: (row: DatabaseRow) => void;
 }) {
-  const { columns, titleProperty, busy, view } = model;
+  const { columns, titleProperty, busy } = model;
   const [cell, setCell] = useState<{ rowId: string; property: string }>();
   const allSelected = tableRows.length > 0 && tableRows.every((row) => selected.includes(row.id));
   return (
@@ -101,42 +100,6 @@ export function MobileDatabaseRows({
           </dl>
         </article>
       ))}
-      <div className="phone-database-calculations">
-        {columns.map((property) => (
-          <label key={property.id}>
-            <span>{property.name}</span>
-            <select
-              aria-label={`${property.name}列计算`}
-              value={view.calculations[property.id] ?? 'none'}
-              onChange={(event) =>
-                void actions.saveView({
-                  ...view,
-                  calculations: {
-                    ...view.calculations,
-                    [property.id]: event.target.value as keyof typeof calculationNames,
-                  },
-                })
-              }
-            >
-              {Object.entries(calculationNames)
-                .filter(
-                  ([id]) =>
-                    ['none', 'count', 'filled', 'unique'].includes(id) ||
-                    property.type === 'number' ||
-                    property.type === 'rollup',
-                )
-                .map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-            </select>
-            <strong>
-              {calculate(tableRows, property.id, view.calculations[property.id] ?? 'none')}
-            </strong>
-          </label>
-        ))}
-      </div>
     </div>
   );
 }
