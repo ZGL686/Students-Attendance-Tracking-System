@@ -5,7 +5,8 @@ import { Button, Modal } from '../../components/ui';
 import { useApp } from '../../context';
 import { commitAutomaticCourseImport } from './commit';
 import { createEmptyDraft, parseImportWeeks, validateDrafts } from './model';
-import { readImportFile } from './read';
+import type { CourseCatalogEntry } from './model';
+import { readImportFiles } from './read';
 
 export function ImportCourses({ targetId, onClose }: { targetId: string; onClose: () => void }) {
   const { data, busy, change, notify } = useApp();
@@ -23,6 +24,8 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
   const [summary, setSummary] = useState('');
   const [warnings, setWarnings] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
+  const [catalog, setCatalog] = useState<CourseCatalogEntry[]>([]);
+  const [catalogOnly, setCatalogOnly] = useState(false);
   const [progress, setProgress] = useState({ stage: '', progress: 0 });
   const operation = useRef<AbortController | undefined>(undefined);
   const savingRef = useRef(false);
@@ -36,43 +39,46 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
     onClose();
   }
 
-  async function importFile(file: File) {
+  async function importFiles(files: File[]) {
     if (operation.current || busy || unavailable) return;
     const controller = new AbortController();
     operation.current = controller;
-    setFilename(file.name);
+    setFilename(files.map((file) => file.name).join('、'));
     setError('');
     setNoCourseReason('');
     setSummary('');
     setSkipped([]);
     setWarnings([]);
+    setCatalogOnly(false);
     setProcessing(true);
     setProgress({ stage: '正在读取课表', progress: 0 });
     try {
-      const result = await readImportFile(file, {
+      const result = await readImportFiles(files, {
+        catalog,
         signal: controller.signal,
         onProgress: (next) => {
           if (!controller.signal.aborted) setProgress(next);
         },
       });
       if (controller.signal.aborted) return;
+      setCatalog(result.catalog ?? []);
+      if (!result.drafts.length && result.catalog?.length) {
+        setCatalogOnly(true);
+        setSummary(
+          `已识别 ${result.catalog.length} 条课程参考资料。目录没有星期和节次，请继续选择课表图片；这些资料会用于本次导入。`,
+        );
+        setWarnings(result.warnings);
+        return;
+      }
       const currentTarget = data.workspaces.find((workspace) => workspace.id === targetId);
       if (!currentTarget || currentTarget.deletedAt || data.activeWorkspaceId !== targetId)
         throw new Error('目标工作台已切换或删除，请返回目标工作台重新导入。');
-      const inferredWeekDrafts = result.drafts.filter(
-        (draft) => draft.layout === 'grid' && !draft.weeks.trim(),
-      ).length;
       const drafts = result.drafts.map((draft) =>
         draft.layout === 'grid' && !draft.weeks.trim()
           ? { ...draft, weeks: `1-${currentTarget.totalWeeks}` }
           : draft,
       );
-      const importWarnings = inferredWeekDrafts
-        ? [
-            ...result.warnings,
-            `${inferredWeekDrafts} 门课程未标注周次，已按当前学期 1–${currentTarget.totalWeeks} 周导入。`,
-          ]
-        : result.warnings;
+      const importWarnings = result.warnings;
       const ready = validateDrafts(
         drafts,
         currentTarget.courses,
@@ -104,10 +110,17 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       setProgress({ stage: '正在保存课程', progress: 1 });
       savingRef.current = true;
       setSaving(true);
-      const outcome = { imported: 0, duplicates: 0, skipped: [] as string[] };
+      const outcome = {
+        imported: 0,
+        duplicates: 0,
+        skipped: [] as string[],
+        inferredWeeks: 0,
+        totalWeeks: 0,
+        warnings: [] as string[],
+      };
       const saved = await change((latest) => {
         if (controller.signal.aborted) throw new Error('导入已取消。');
-        Object.assign(outcome, commitAutomaticCourseImport(latest, targetId, drafts));
+        Object.assign(outcome, commitAutomaticCourseImport(latest, targetId, result.drafts));
       }, '');
       if (controller.signal.aborted) return;
       if (!saved) {
@@ -117,9 +130,10 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       const message = `已导入 ${outcome.imported} 门课程，跳过 ${outcome.duplicates} 门重复课程${outcome.skipped.length ? `，${outcome.skipped.length} 项无法导入` : ''}。`;
       setSummary(message);
       setSkipped(outcome.skipped);
-      setWarnings(importWarnings);
+      const savedWarnings = [...importWarnings, ...outcome.warnings];
+      setWarnings([...new Set(savedWarnings)]);
       notify(message);
-      if (!outcome.skipped.length && !importWarnings.length) onClose();
+      if (!outcome.skipped.length && !savedWarnings.length) onClose();
     } catch (reason) {
       if (!controller.signal.aborted) {
         const message = reason instanceof Error ? reason.message : String(reason);
@@ -208,19 +222,22 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       onClose={close}
     >
       <div className="timetable-import">
-        <p className="inline-note">选择图片或文件后自动识别并保存课程，无需逐条修改或再次确认。</p>
+        <p className="inline-note">
+          可同时选择课程目录和课表图片；识别完整的上课安排会自动追加保存。
+        </p>
         <div className="import-picker-grid">
           <input
             ref={fileInput}
             className="import-file-input"
             type="file"
+            multiple
             accept="image/*,.xlsx,.csv,.pdf"
             disabled={processing || busy || unavailable}
             aria-label="选择课程表图片或文件"
             onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
+              const files = Array.from(event.currentTarget.files ?? []);
               event.currentTarget.value = '';
-              if (file) void importFile(file);
+              if (files.length) void importFiles(files);
             }}
           />
           <Button
@@ -231,11 +248,12 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
             <Upload size={20} />
             选择课程表图片或文件
           </Button>
-          <small>支持 JPG、PNG、WebP、BMP、Excel、CSV 和 PDF；识别后自动保存。</small>
+          <small>支持多张 JPG、PNG、WebP、BMP 图片及 Excel、CSV、PDF；图片选择顺序不限。</small>
         </div>
         <p className="appearance-note">
           最大 20
           MB，仅在本机处理。自动追加课程并跳过重复项；信息不完整或时间冲突的课程会列出原因，已有课表和历史考勤保留。
+          截图顶部的“第几周”仅作显示信息；课程未标注周次时按当前整个学期处理。
         </p>
         {filename && <p className="import-source">{filename}</p>}
         {processing && (
@@ -267,6 +285,19 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
           <p className="import-summary" role="status">
             {summary}
           </p>
+        )}
+        {catalogOnly && catalog.length > 0 && (
+          <section className="import-skipped" aria-label="已识别的课程目录">
+            <h3>课程参考资料 · {catalog.length} 条</h3>
+            <ul>
+              {catalog.map((entry, index) => (
+                <li key={`${entry.code}-${index}`}>
+                  {entry.name} · {entry.code || '未识别代码'} · {entry.teacher || '教师待补充'}
+                </li>
+              ))}
+            </ul>
+            <p>继续点击上方按钮补选课表图片。目录资料仅在本次窗口保留，不会单独写入课表。</p>
+          </section>
         )}
         {(noCourseReason || skipped.length > 0) && (
           <section className="quick-course-entry" aria-label="手动补录课程">

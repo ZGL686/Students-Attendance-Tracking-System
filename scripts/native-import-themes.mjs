@@ -66,7 +66,7 @@ async function syntheticTimetable(page) {
     await document.fonts.load('36px "Microsoft YaHei"');
     const canvas = document.createElement('canvas');
     canvas.width = 800;
-    canvas.height = 450;
+    canvas.height = 550;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Synthetic timetable canvas could not be created');
     context.fillStyle = '#fff';
@@ -75,11 +75,14 @@ async function syntheticTimetable(page) {
     context.font = '36px "Microsoft YaHei", sans-serif';
     context.fillText('星期一', 150, 70);
     context.fillText('星期二', 480, 70);
-    context.fillText('数字设计', 135, 170);
-    context.fillText('1-16周', 135, 225);
-    context.fillText('第1-2节', 135, 280);
+    context.font = '28px "Microsoft YaHei", sans-serif';
+    context.fillText('桌面数字设计', 125, 170);
+    context.fillText('教师：虚构教师', 125, 215);
+    context.fillText('教室：桌面测试室', 125, 260);
+    context.fillText('1-16周', 125, 305);
+    context.fillText('第1-2节', 125, 350);
     context.fillText('1', 20, 170);
-    context.fillText('2', 20, 280);
+    context.fillText('2', 20, 350);
     return canvas.toDataURL('image/png').split(',')[1];
   });
   return Buffer.from(base64, 'base64');
@@ -97,8 +100,9 @@ async function showImportedCourse(page, name) {
   await expect(card).toHaveCount(1);
   await card.click();
   const detail = page.getByRole('dialog', { name, exact: true });
-  await expect(detail).toContainText('虚构教师');
-  await expect(detail).toContainText('桌面测试室');
+  const text = (await detail.innerText()).replace(/\s/g, '');
+  assert(text.includes('虚构教师'));
+  assert(text.includes('桌面测试室'));
   await expect(detail).toContainText('1–2 节');
   await page.keyboard.press('Escape');
 }
@@ -115,58 +119,62 @@ export async function prepareImportAndThemeRestart(page, dataDir, network) {
     'OCR resources were already loaded before the fresh-profile check',
   );
   await page.getByRole('navigation').getByRole('button', { name: '课程表', exact: true }).click();
+  const original = await page.evaluate(async () => {
+    const stored = await window.__TAURI_INTERNALS__.invoke('load_data');
+    return JSON.parse(stored.payload);
+  });
   const image = await syntheticTimetable(page);
   await page.getByRole('button', { name: '导入课程', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '导入课程', exact: true });
-  await dialog.getByLabel('选择课表文件', { exact: false }).setInputFiles({
+  await dialog.getByLabel('选择课程表图片或文件', { exact: true }).setInputFiles({
     name: '桌面虚构中文课表.png',
     mimeType: 'image/png',
     buffer: image,
   });
-  await dialog.getByRole('button', { name: '识别并预览', exact: true }).click();
-  const next = dialog.getByRole('button', { name: '下一步：确认保存', exact: true });
   try {
-    await next.waitFor({ timeout: 180_000 });
+    await expect(dialog.locator('.import-summary')).toContainText('已导入 1 门课程', {
+      timeout: 180_000,
+    });
   } catch (error) {
     await page.screenshot({ path: path.join(dataDir, 'import-failure-desktop.png') });
     const visibleErrors = await dialog.locator('.form-error').allTextContents();
     throw new Error(
-      `Native OCR did not reach preview: ${visibleErrors.join(' ')}; blocked external requests: ${JSON.stringify([...network.external])}`,
+      `Native OCR did not save automatically: ${visibleErrors.join(' ')}; blocked external requests: ${JSON.stringify([...network.external])}`,
       { cause: error },
     );
   }
-  const rows = dialog.getByRole('region', { name: /待导入课程 \d+/ });
-  let recognized;
-  const initialOcrDrafts = [];
-  for (let index = 0; index < (await rows.count()); index++) {
-    const row = rows.nth(index);
-    const name = await row.getByLabel('课程名称', { exact: true }).inputValue();
-    const day = await row.getByRole('combobox', { name: '星期', exact: true }).inputValue();
-    const weeks = await row.getByLabel('上课周次', { exact: true }).inputValue();
-    initialOcrDrafts.push({ name, day, weeks });
-    if (!recognized && name.replace(/\s/g, '').includes('数字设计') && day === '1' && weeks.trim())
-      recognized = row;
-    else await row.getByRole('checkbox').uncheck();
-  }
-  assert(
-    recognized,
-    `Bundled offline OCR did not recognize the Chinese timetable: ${JSON.stringify(initialOcrDrafts)}`,
+  const persisted = await page.evaluate(async () => {
+    const stored = await window.__TAURI_INTERNALS__.invoke('load_data');
+    return JSON.parse(stored.payload);
+  });
+  const previousWorkspace = original.workspaces.find(
+    (workspace) => workspace.id === original.activeWorkspaceId,
   );
-  const courseName = '桌面数字设计';
-  // Exercise the review form after proving that OCR produced the expected fields.
-  await recognized.getByLabel('课程名称', { exact: true }).fill(courseName);
-  await recognized.getByLabel('任课教师', { exact: true }).fill('虚构教师');
-  await recognized.getByLabel('教室', { exact: true }).fill('桌面测试室');
-  await recognized.getByLabel('开始节次', { exact: true }).fill('1');
-  await recognized.getByLabel('结束节次', { exact: true }).fill('2');
-  await recognized.getByLabel('上课周次', { exact: true }).fill('1-16');
-  await expect(
-    dialog.getByRole('radio', { name: '追加课程，跳过完全重复项', exact: true }),
-  ).toBeChecked();
-  await expect(next).toBeEnabled();
-  await page.screenshot({ path: path.join(dataDir, 'import-preview-desktop.png') });
-  await next.click();
-  await dialog.getByRole('button', { name: '确认导入', exact: true }).click();
+  const after = persisted.workspaces.find(
+    (workspace) => workspace.id === original.activeWorkspaceId,
+  );
+  assert.deepEqual(
+    after.courses.slice(0, previousWorkspace.courses.length),
+    previousWorkspace.courses,
+  );
+  assert.deepEqual({ ...after, courses: previousWorkspace.courses }, previousWorkspace);
+  const initialOcrDrafts = after.courses.slice(previousWorkspace.courses.length);
+  assert.equal(initialOcrDrafts.length, 1);
+  const recognized = initialOcrDrafts[0];
+  assert.equal(recognized.name.replace(/\s/g, ''), '桌面数字设计');
+  assert.equal(recognized.teacher.replace(/\s/g, ''), '虚构教师');
+  assert.equal(recognized.room.replace(/\s/g, ''), '桌面测试室');
+  assert.equal(recognized.day, 1);
+  assert.equal(recognized.start, 1);
+  assert.equal(recognized.end, 2);
+  assert.deepEqual(
+    recognized.weeks,
+    Array.from({ length: 16 }, (_, i) => i + 1),
+  );
+  const courseName = recognized.name;
+  await expect(dialog.getByRole('button', { name: '确认导入', exact: true })).toHaveCount(0);
+  await page.screenshot({ path: path.join(dataDir, 'import-automatic-desktop.png') });
+  await dialog.getByRole('button', { name: '完成', exact: true }).click();
   await dialog.waitFor({ state: 'detached' });
   await showImportedCourse(page, courseName);
   const ocrResources = assertNativeOffline(network, true);

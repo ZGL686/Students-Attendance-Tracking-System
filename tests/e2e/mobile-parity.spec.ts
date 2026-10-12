@@ -13,20 +13,19 @@ test('phone imports and edits courses, selects students for batch attendance and
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: '主要页面' });
   await nav.getByRole('button', { name: '课程表', exact: true }).click();
+  await page.getByRole('button', { name: '每日安排', exact: true }).click();
   await page.getByRole('button', { name: '导入课程', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '导入课程', exact: true });
-  await dialog.getByLabel('选择课表文件', { exact: false }).setInputFiles({
+  await dialog.getByLabel('选择课程表图片或文件', { exact: true }).setInputFiles({
     name: '虚构手机课表.csv',
     mimeType: 'text/csv',
     buffer: Buffer.from(
       '课程名称,任课教师,教室,星期,开始节次,结束节次,上课周次\n虚构手机实践,虚构老师,测试室,周一,1,2,1-16\n',
     ),
   });
-  await dialog.getByRole('button', { name: '识别并预览', exact: true }).click();
-  await expect(dialog.getByRole('button', { name: '下一步：确认保存' })).toBeEnabled();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('已导入 1 门课程');
   await page.screenshot({ path: testInfo.outputPath('phone-import.png') });
-  await dialog.getByRole('button', { name: '下一步：确认保存' }).click();
-  await dialog.getByRole('button', { name: '确认导入', exact: true }).click();
   await page.locator('.mobile-agenda-course').filter({ hasText: '虚构手机实践' }).click();
   await page.getByRole('button', { name: '编辑课程', exact: true }).click();
   await page.getByLabel('教室', { exact: true }).fill('修改后的测试室');
@@ -66,6 +65,7 @@ test('phone imports and edits courses, selects students for batch attendance and
   expect((await downloading).suggestedFilename()).toMatch(/\.xlsx$/);
   await page.reload();
   await nav.getByRole('button', { name: '课程表', exact: true }).click();
+  await page.getByRole('button', { name: '每日安排', exact: true }).click();
   await expect(page.locator('.mobile-agenda-course')).toContainText('修改后的测试室');
   await page.getByRole('button', { name: '全部功能', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: '设置与偏好', exact: true }).click();

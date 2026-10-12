@@ -1,6 +1,17 @@
 import type { Course } from '../../model';
 import { courseSchema, uid } from '../../model';
 
+export type FieldConfidence = Partial<
+  Record<'name' | 'teacher' | 'room' | 'day' | 'periods', number>
+>;
+export type CourseCatalogEntry = {
+  code: string;
+  name: string;
+  teacher: string;
+  source: string;
+  fieldConfidence: FieldConfidence;
+};
+
 export type CourseDraft = {
   id: string;
   name: string;
@@ -16,6 +27,8 @@ export type CourseDraft = {
   layout?: 'grid' | 'list' | 'text';
   rawText?: string;
   confidence?: number;
+  fieldConfidence?: FieldConfidence;
+  blockingIssues?: string[];
 };
 export type ImportMode = 'append' | 'replace';
 export type DraftIssue = { draftId: string; message: string };
@@ -25,11 +38,13 @@ export type ReadOptions = {
   signal?: AbortSignal;
   onProgress?: (progress: ImportProgress) => void;
   selection?: number[];
+  catalog?: CourseCatalogEntry[];
 };
 export type ImportResult = {
   drafts: CourseDraft[];
   sources: ImportSource[];
   warnings: string[];
+  catalog?: CourseCatalogEntry[];
 };
 
 export function createEmptyDraft(source = '手动补充'): CourseDraft {
@@ -117,14 +132,37 @@ export function validateDrafts(
   existing: Course[],
   mode: ImportMode,
   totalWeeks = 30,
-): { courses: Course[]; issues: DraftIssue[]; duplicates: number } {
+): {
+  courses: Course[];
+  issues: DraftIssue[];
+  warnings: DraftIssue[];
+  acceptedDraftIds: string[];
+  duplicates: number;
+} {
   const issues: DraftIssue[] = [];
+  const warnings: DraftIssue[] = [];
+  const acceptedDraftIds: string[] = [];
   const courses: Course[] = [];
   const retained = mode === 'append' ? existing : [];
   const seen = new Set(retained.map(courseFingerprint));
   let duplicates = 0;
   for (const draft of drafts) {
     const complain = (message: string) => issues.push({ draftId: draft.id, message });
+    const lowConfidence = (field: keyof FieldConfidence) => {
+      const confidence = draft.fieldConfidence?.[field];
+      return confidence !== undefined && (!Number.isFinite(confidence) || confidence < 75);
+    };
+    const blockers = [...(draft.blockingIssues ?? [])];
+    for (const [field, label] of [
+      ['name', '课程名称'],
+      ['day', '星期'],
+      ['periods', '节次'],
+    ] as const)
+      if (lowConfidence(field)) blockers.push(`${label}识别置信度较低，未自动导入。`);
+    if (blockers.length) {
+      complain([...new Set(blockers)].join('；'));
+      continue;
+    }
     const name = draft.name.trim();
     if (!name) {
       complain('请填写课程名称。');
@@ -153,8 +191,8 @@ export function validateDrafts(
     const parsed = courseSchema.safeParse({
       id: draft.id,
       name,
-      teacher: draft.teacher.trim(),
-      room: draft.room.trim(),
+      teacher: lowConfidence('teacher') ? '' : draft.teacher.trim(),
+      room: lowConfidence('room') ? '' : draft.room.trim(),
       day,
       start: Number(draft.start),
       end: Number(draft.end),
@@ -179,9 +217,19 @@ export function validateDrafts(
     // Imported drafts are temporary IDs; avoid colliding with an existing course ID.
     if ([...existing, ...courses].some((other) => other.id === course.id)) course.id = uid();
     courses.push(course);
+    acceptedDraftIds.push(draft.id);
+    for (const [field, label] of [
+      ['teacher', '任课教师'],
+      ['room', '教室'],
+    ] as const)
+      if (lowConfidence(field))
+        warnings.push({
+          draftId: draft.id,
+          message: `${label}识别置信度较低，已留空；课程表可手动补充。`,
+        });
     seen.add(fingerprint);
   }
-  return { courses, issues, duplicates };
+  return { courses, issues, warnings, acceptedDraftIds, duplicates };
 }
 
 export function checkAborted(signal?: AbortSignal): void {
