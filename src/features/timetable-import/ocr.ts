@@ -1,13 +1,19 @@
-import { abortable, checkAborted, offlineUrl } from './model';
+import { checkAborted, offlineUrl } from './model';
 import type { CourseDraft, ReadOptions } from './model';
 import { parsePositionedText, parseTextBlocks } from './parse';
 import type { PositionedText } from './parse';
 import type { ImageRect } from './image-layout';
+import { createManagedOcrWorker } from './managed-ocr-worker';
+import type { ManagedOcrWorker } from './managed-ocr-worker';
 
 export type OcrText = { text: string; tokens: PositionedText[]; confidence: number };
 export type OcrMode = 'block' | 'line' | 'sparse' | 'digits';
 
-export async function createOcr(options: ReadOptions): Promise<{
+// PDF canvases change between renders, so PNG reuse stays opt-in for immutable images.
+export async function createOcr(
+  options: ReadOptions,
+  immutableImages = false,
+): Promise<{
   recognize: (image: HTMLCanvasElement, source: string) => Promise<CourseDraft[]>;
   scan: (
     image: HTMLCanvasElement,
@@ -16,48 +22,55 @@ export async function createOcr(options: ReadOptions): Promise<{
     mode?: OcrMode,
   ) => Promise<OcrText>;
   close: () => Promise<void>;
+  finishImageAnalysis: () => Promise<void>;
 }> {
   const { signal, onProgress } = options;
   checkAborted(signal);
-  const { createWorker, OEM, PSM } = await import('tesseract.js');
+  const { PSM } = await import('tesseract.js');
   checkAborted(signal);
   onProgress?.({ stage: '正在加载本地中文识别引擎…', progress: 0.05 });
-  const pending = createWorker(['chi_sim', 'eng'], OEM.LSTM_ONLY, {
+  const lifetime = new AbortController();
+  const onAbort = () => lifetime.abort();
+  signal?.addEventListener('abort', onAbort, { once: true });
+  if (signal?.aborted) lifetime.abort();
+  let closed = false;
+  let worker: ManagedOcrWorker | undefined;
+  let chineseWorker: ManagedOcrWorker | undefined;
+  let digitsWorker: ManagedOcrWorker | undefined;
+  const settings = {
     workerPath: offlineUrl('ocr/worker.min.js'),
     corePath: offlineUrl('ocr/core/'),
     langPath: offlineUrl('ocr/lang'),
-    workerBlobURL: false,
-    gzip: true,
-    logger: (message) =>
+    cacheImages: immutableImages,
+    signal: lifetime.signal,
+    onProgress: (message: { status: string; progress: number }) => {
+      if (closed || lifetime.signal.aborted) return;
       onProgress?.({
         stage:
           message.status === 'recognizing text' ? '正在离线识别课程文字…' : '正在准备本地识别资源…',
         progress: Math.min(1, Math.max(0, message.progress)),
-      }),
-  });
-  const worker = await abortable(pending, signal, () => {
-    void pending.then((value) => value.terminate()).catch(() => {});
-  });
-  let closed = false;
-  let language: 'mixed' | 'chinese' | 'digits' = 'mixed';
+      });
+    },
+  };
   const close = async () => {
     if (!closed) {
       closed = true;
-      await worker.terminate();
+      lifetime.abort();
+      signal?.removeEventListener('abort', onAbort);
+      await Promise.allSettled([
+        worker?.terminate(),
+        chineseWorker?.terminate(),
+        digitsWorker?.terminate(),
+      ]);
     }
   };
   try {
     checkAborted(signal);
-    await abortable(
-      worker.setParameters({
-        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-        preserve_interword_spaces: '1',
-      }),
-      signal,
-      () => {
-        void close();
-      },
-    );
+    worker = await createManagedOcrWorker('chi_sim+eng', settings);
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+      preserve_interword_spaces: '1',
+    });
   } catch (error) {
     await close();
     throw error;
@@ -70,41 +83,32 @@ export async function createOcr(options: ReadOptions): Promise<{
   ): Promise<OcrText> => {
     checkAborted(signal);
     if (closed) throw new DOMException('已取消导入。', 'AbortError');
-    const nextLanguage = mode === 'digits' ? 'digits' : region ? 'chinese' : 'mixed';
-    if (nextLanguage !== language) {
-      await abortable(
-        worker.reinitialize(
-          nextLanguage === 'digits'
-            ? 'eng'
-            : nextLanguage === 'chinese'
-              ? 'chi_sim'
-              : 'chi_sim+eng',
-        ),
-        signal,
-        () => {
-          void close();
-        },
-      );
-      language = nextLanguage;
+    let activeWorker: ManagedOcrWorker;
+    if (mode === 'digits') {
+      // Keep the small English model ready instead of reinitializing Chinese for every room.
+      digitsWorker ??= await createManagedOcrWorker('eng', settings);
+      activeWorker = digitsWorker;
+    } else if (region) {
+      // Fixed languages avoid repeated WASM reinitialization while keeping regional Chinese accuracy.
+      chineseWorker ??= await createManagedOcrWorker('chi_sim', settings);
+      activeWorker = chineseWorker;
+    } else {
+      if (!worker) throw new Error('图片版式分析已经结束，请重新启动导入。');
+      activeWorker = worker!;
     }
-    await abortable(
-      worker.setParameters({
-        tessedit_pageseg_mode:
-          mode === 'line' || mode === 'digits'
-            ? PSM.SINGLE_LINE
-            : mode === 'sparse'
-              ? PSM.SPARSE_TEXT
-              : PSM.SINGLE_BLOCK,
-        tessedit_char_whitelist: mode === 'digits' ? '0123456789-' : '',
-      }),
-      signal,
-      () => {
-        void close();
-      },
-    );
+    await activeWorker.setParameters({
+      preserve_interword_spaces: '1',
+      tessedit_pageseg_mode:
+        mode === 'line' || mode === 'digits'
+          ? PSM.SINGLE_LINE
+          : mode === 'sparse'
+            ? PSM.SPARSE_TEXT
+            : PSM.SINGLE_BLOCK,
+      tessedit_char_whitelist: mode === 'digits' ? '0123456789-' : '',
+    });
     let crop: HTMLCanvasElement | undefined;
     try {
-      if (region && scale !== 1) {
+      if (region) {
         crop = document.createElement('canvas');
         crop.width = Math.round(region.width * scale);
         crop.height = Math.round(region.height * scale);
@@ -122,29 +126,20 @@ export async function createOcr(options: ReadOptions): Promise<{
           crop.height,
         );
       }
-      const result = await abortable(
-        worker.recognize(
-          crop ?? image,
-          region && !crop
-            ? {
-                rectangle: {
-                  left: region.x,
-                  top: region.y,
-                  width: region.width,
-                  height: region.height,
-                },
-              }
-            : {},
-          { text: true, blocks: true },
-        ),
-        signal,
-        () => {
-          void close();
-        },
+      const result = await activeWorker.recognize(
+        crop ?? image,
+        region && !crop
+          ? {
+              left: region.x,
+              top: region.y,
+              width: region.width,
+              height: region.height,
+            }
+          : undefined,
       );
       checkAborted(signal);
       const tokens: PositionedText[] = [];
-      for (const block of result.data.blocks ?? [])
+      for (const block of result.blocks ?? [])
         for (const paragraph of block.paragraphs) {
           for (const line of paragraph.lines)
             for (const word of line.words)
@@ -157,7 +152,7 @@ export async function createOcr(options: ReadOptions): Promise<{
                 confidence: word.confidence,
               });
         }
-      return { text: result.data.text, tokens, confidence: result.data.confidence };
+      return { text: result.text, tokens, confidence: result.confidence };
     } finally {
       if (crop) {
         crop.width = 0;
@@ -167,6 +162,12 @@ export async function createOcr(options: ReadOptions): Promise<{
   };
   return {
     close,
+    finishImageAnalysis: async () => {
+      if (immutableImages) {
+        await worker?.terminate();
+        worker = undefined;
+      }
+    },
     scan,
     recognize: async (image, source) => {
       const result = await scan(image);

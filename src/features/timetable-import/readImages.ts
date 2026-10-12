@@ -1,7 +1,10 @@
 import { detectCatalogRows } from './catalog-layout';
 import { compactCourseText } from './card-text';
 import { detectColoredRegions, locateGridAxes, regionPlacement } from './image-layout';
-import type { ImageRect } from './image-layout';
+import type { GridAxes, ImageRect } from './image-layout';
+import { cachedCatalogField } from './catalog-field';
+import { mergeCatalogReferences } from './catalog-references';
+import { createImportProgress } from './import-progress';
 import { checkAborted } from './model';
 import type { CourseCatalogEntry, CourseDraft, ImportResult, ReadOptions } from './model';
 import { createOcr, imageCanvas } from './ocr';
@@ -22,59 +25,134 @@ function inset(rect: ImageRect): ImageRect {
 }
 
 export async function readImages(files: File[], options: ReadOptions): Promise<ImportResult> {
+  const progress = createImportProgress(options.onProgress, options.signal);
+  progress.phase('正在加载本地识别引擎…', 0, 0.02);
   let engine: Engine | undefined;
   const prepared: {
     file: File;
-    canvas: HTMLCanvasElement;
     scan: OcrText;
     rows: ReturnType<typeof detectCatalogRows>;
     regions: ImageRect[];
+    axes: GridAxes | null;
   }[] = [];
+  const canvases = new Set<HTMLCanvasElement>();
+  const releaseCanvas = (canvas: HTMLCanvasElement) => {
+    canvas.width = 0;
+    canvas.height = 0;
+    canvases.delete(canvas);
+  };
   const catalog: CourseCatalogEntry[] = [...(options.catalog ?? [])];
   const drafts: CourseDraft[] = [];
   const warnings: string[] = [];
   try {
-    engine = await createOcr(options);
-    for (const file of files) {
+    engine = await createOcr({ ...options, onProgress: progress.worker }, true);
+    for (const [fileIndex, file] of files.entries()) {
       checkAborted(options.signal);
       const canvas = await imageCanvas(file, options.signal);
+      canvases.add(canvas);
       // Register ownership before an abortable recognition can fail.
       const item = {
         file,
-        canvas,
         scan: { text: '', tokens: [], confidence: 0 } as OcrText,
         rows: [] as ReturnType<typeof detectCatalogRows>,
         regions: [] as ImageRect[],
+        axes: null as GridAxes | null,
       };
       prepared.push(item);
-      options.onProgress?.({ stage: `正在分析 ${file.name} 的版式…`, progress: 0 });
-      item.scan = await engine.scan(canvas);
+      progress.phase(
+        `正在分析图片 ${fileIndex + 1}/${files.length} 的版式…`,
+        0.02 + (0.13 * fileIndex) / files.length,
+        0.02 + (0.13 * (fileIndex + 1)) / files.length,
+        10,
+      );
       const pixels = canvas
         .getContext('2d', { willReadFrequently: true })!
         .getImageData(0, 0, canvas.width, canvas.height);
-      item.rows = detectCatalogRows(pixels, item.scan.tokens);
-      item.regions = item.rows.length ? [] : detectColoredRegions(pixels);
+      item.regions = detectColoredRegions(pixels);
+      if (item.regions.length >= 2) {
+        const sidebarWidth = Math.max(
+          1,
+          Math.floor(Math.min(...item.regions.map((region) => region.x)) * 0.95),
+        );
+        const headerHeight = Math.max(
+          1,
+          Math.floor(Math.min(...item.regions.map((region) => region.y))),
+        );
+        const tokens: OcrText['tokens'] = [];
+        for (const scale of [1, 2, 3]) {
+          tokens.push(
+            ...(
+              await engine.scan(
+                canvas,
+                { x: 0, y: 0, width: canvas.width, height: headerHeight },
+                scale,
+                'sparse',
+              )
+            ).tokens,
+          );
+          tokens.push(
+            ...(
+              await engine.scan(
+                canvas,
+                { x: 0, y: 0, width: sidebarWidth, height: canvas.height },
+                scale,
+                'sparse',
+              )
+            ).tokens,
+          );
+          item.axes = locateGridAxes(tokens, item.regions, canvas.width, canvas.height);
+          if (item.axes) break;
+        }
+        item.scan = { text: tokens.map((token) => token.text).join(' '), tokens, confidence: 0 };
+      }
+      if (!item.axes) {
+        const axisTokens = item.scan.tokens;
+        item.scan = await engine.scan(canvas);
+        item.rows = detectCatalogRows(pixels, item.scan.tokens);
+        if (item.rows.length) item.regions = [];
+        else if (item.regions.length)
+          item.axes = locateGridAxes(
+            [...axisTokens, ...item.scan.tokens],
+            item.regions,
+            canvas.width,
+            canvas.height,
+          );
+      }
+      progress.finish();
+      releaseCanvas(canvas);
     }
+    // Drop the mixed-language analysis worker before loading the digit verifier.
+    await engine.finishImageAnalysis();
     // The reference table is always processed first, even if selected second.
+    const directoryRows = prepared.reduce((sum, item) => sum + item.rows.length, 0);
+    let directoryIndex = 0;
     for (const item of prepared.filter((value) => value.rows.length)) {
+      const canvas = await imageCanvas(item.file, options.signal);
+      canvases.add(canvas);
       for (const [index, row] of item.rows.entries()) {
         checkAborted(options.signal);
-        options.onProgress?.({
-          stage: `正在识别课程目录 ${index + 1}/${item.rows.length}…`,
-          progress: index / item.rows.length,
-        });
-        const name = (await retryRegion(engine, item.canvas, row.name, true)).sort(
-          (a, b) => b.confidence - a.confidence,
-        )[0];
+        progress.phase(
+          `正在读取课程目录 ${directoryIndex + 1}/${directoryRows}…`,
+          0.15 + (0.25 * directoryIndex) / directoryRows,
+          0.15 + (0.25 * (directoryIndex + 1)) / directoryRows,
+          9,
+        );
+        const name =
+          cachedCatalogField(item.scan, row.name) ??
+          (await retryRegion(engine, canvas, row.name, true)).sort(
+            (a, b) => b.confidence - a.confidence,
+          )[0];
         const teacher = row.teacher
-          ? (await retryRegion(engine, item.canvas, row.teacher, true)).sort(
+          ? (cachedCatalogField(item.scan, row.teacher) ??
+            (await retryRegion(engine, canvas, row.teacher, true)).sort(
               (a, b) => b.confidence - a.confidence,
-            )[0]
+            )[0])
           : undefined;
         const code = row.code
-          ? (await retryRegion(engine, item.canvas, row.code, true)).sort(
+          ? (cachedCatalogField(item.scan, row.code) ??
+            (await retryRegion(engine, canvas, row.code, true)).sort(
               (a, b) => b.confidence - a.confidence,
-            )[0]
+            )[0])
           : undefined;
         const entry: CourseCatalogEntry = {
           name: compactCourseText(name.text),
@@ -100,82 +178,41 @@ export async function readImages(files: File[], options: ReadOptions): Promise<I
         if (entry.name) catalog.push(entry);
         if (teacher && teacher.confidence < 75)
           warnings.push(`${entry.name || `目录第${index + 1}行`}：教师识别分数低于 75，已留空。`);
+        directoryIndex++;
+        progress.finish();
       }
+      releaseCanvas(canvas);
     }
-    const references = catalog.filter(
-      (entry, index) =>
-        catalog.findIndex(
-          (other) =>
-            other.name === entry.name &&
-            other.teacher === entry.teacher &&
-            other.code === entry.code,
-        ) === index,
-    );
+    const references = mergeCatalogReferences(catalog);
+    const cardCount = prepared.reduce((sum, item) => sum + item.regions.length, 0);
+    let cardIndex = 0;
     for (const item of prepared.filter((value) => !value.rows.length)) {
       if (item.regions.length) {
-        const sidebarWidth = Math.max(
-          1,
-          Math.floor(Math.min(...item.regions.map((region) => region.x)) * 0.95),
-        );
-        const sidebar = await engine.scan(
-          item.canvas,
-          { x: 0, y: 0, width: sidebarWidth, height: item.canvas.height },
-          1,
-          'sparse',
-        );
-        const headerHeight = Math.max(
-          1,
-          Math.floor(Math.min(...item.regions.map((region) => region.y))),
-        );
-        const header = await engine.scan(
-          item.canvas,
-          { x: 0, y: 0, width: item.canvas.width, height: headerHeight },
-          1,
-          'sparse',
-        );
-        const axisTokens = [...item.scan.tokens, ...sidebar.tokens, ...header.tokens];
-        let axes = locateGridAxes(axisTokens, item.regions, item.canvas.width, item.canvas.height);
-        for (const scale of [2, 3]) {
-          if (axes) break;
-          axisTokens.push(
-            ...(
-              await engine.scan(
-                item.canvas,
-                { x: 0, y: 0, width: sidebarWidth, height: item.canvas.height },
-                scale,
-                'sparse',
-              )
-            ).tokens,
-          );
-          axisTokens.push(
-            ...(
-              await engine.scan(
-                item.canvas,
-                { x: 0, y: 0, width: item.canvas.width, height: headerHeight },
-                scale,
-                'sparse',
-              )
-            ).tokens,
-          );
-          axes = locateGridAxes(axisTokens, item.regions, item.canvas.width, item.canvas.height);
-        }
-        for (const [index, region] of item.regions.entries()) {
+        const canvas = await imageCanvas(item.file, options.signal);
+        canvases.add(canvas);
+        const axes = item.axes;
+        for (const region of item.regions) {
           checkAborted(options.signal);
-          options.onProgress?.({
-            stage: `正在识别课程格 ${index + 1}/${item.regions.length}…`,
-            progress: index / item.regions.length,
-          });
+          progress.phase(
+            `正在识别课程格 ${cardIndex + 1}/${cardCount}（${item.file.name}）…`,
+            0.42 + (0.53 * cardIndex) / cardCount,
+            0.42 + (0.53 * (cardIndex + 1)) / cardCount,
+            26,
+          );
           drafts.push(
             await readCard(
               engine,
-              item.canvas,
+              canvas,
               inset(region),
               item.file.name,
               axes ? regionPlacement(region, axes) : null,
               references,
             ),
           );
+          cardIndex++;
+          progress.finish();
         }
+        releaseCanvas(canvas);
       } else {
         const parsed = item.scan.tokens.length
           ? parsePositionedText(item.scan.tokens, item.file.name)
@@ -183,6 +220,8 @@ export async function readImages(files: File[], options: ReadOptions): Promise<I
         drafts.push(...parsed);
       }
     }
+    progress.phase('图片识别完成，正在合并课程…', 0.95, 0.97);
+    progress.finish();
     return {
       drafts,
       catalog: references,
@@ -193,10 +232,7 @@ export async function readImages(files: File[], options: ReadOptions): Promise<I
     try {
       await engine?.close();
     } finally {
-      for (const { canvas } of prepared) {
-        canvas.width = 0;
-        canvas.height = 0;
-      }
+      for (const canvas of canvases) releaseCanvas(canvas);
     }
   }
 }

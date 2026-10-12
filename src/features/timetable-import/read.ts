@@ -48,32 +48,75 @@ export async function readImportFiles(
   if (!files.length) throw new Error('请先选择课程表图片或文件。');
   const kinds = files.map(kind);
   const images = files.filter((_, index) => kinds[index] === 'image');
+  let completedFiles = 0,
+    progress = 0,
+    reading = true;
+  const report = (stage: string, value: number) => {
+    if (!reading || options.signal?.aborted) return;
+    progress = Math.max(progress, Math.min(0.97, Math.max(0, value)));
+    options.onProgress?.({ stage, progress });
+  };
+  const readGroup = async (
+    label: string,
+    count: number,
+    reader: (scoped: ReadOptions) => Promise<ImportResult>,
+  ) => {
+    let active = true;
+    const start = completedFiles;
+    report(`正在读取${label}…`, (0.95 * start) / files.length);
+    try {
+      const group = await reader({
+        ...options,
+        onProgress: (next) => {
+          if (!active) return;
+          const local = Number.isFinite(next.progress)
+            ? Math.min(1, Math.max(0, next.progress))
+            : 0;
+          report(`${label} · ${next.stage}`, (0.95 * (start + count * local)) / files.length);
+        },
+      });
+      checkAborted(options.signal);
+      completedFiles += count;
+      report(`已识别${label}，正在合并课程…`, (0.95 * completedFiles) / files.length);
+      return group;
+    } finally {
+      active = false;
+    }
+  };
   let result: ImportResult = {
     drafts: [],
     sources: [],
     warnings: [],
     catalog: options.catalog ?? [],
   };
-  if (images.length) {
-    const { readImages } = await import('./readImages');
-    result = await readImages(images, options);
+  try {
+    if (images.length) {
+      const { readImages } = await import('./readImages');
+      result = await readGroup(`${images.length} 张图片`, images.length, (scoped) =>
+        readImages(images, scoped),
+      );
+    }
+    for (let index = 0; index < files.length; index++) {
+      if (kinds[index] === 'image') continue;
+      const document = await readGroup(`文件“${files[index].name}”`, 1, (scoped) =>
+        readDocument(files[index], scoped),
+      );
+      result.drafts.push(...document.drafts);
+      result.sources.push(...document.sources);
+      result.warnings.push(...document.warnings);
+    }
+    checkAborted(options.signal);
+    if (!result.drafts.length && !result.catalog?.length) {
+      throw new Error('没有识别到课程，请换一张更清晰的课表图片或上传 Excel / CSV 文件。');
+    }
+    report(
+      result.drafts.length ? '识别完成，正在自动导入。' : '课程目录识别完成，请补选课表图片。',
+      0.97,
+    );
+    return result;
+  } finally {
+    reading = false;
   }
-  for (let index = 0; index < files.length; index++) {
-    if (kinds[index] === 'image') continue;
-    const document = await readDocument(files[index], options);
-    result.drafts.push(...document.drafts);
-    result.sources.push(...document.sources);
-    result.warnings.push(...document.warnings);
-  }
-  checkAborted(options.signal);
-  if (!result.drafts.length && !result.catalog?.length) {
-    throw new Error('没有识别到课程，请换一张更清晰的课表图片或上传 Excel / CSV 文件。');
-  }
-  options.onProgress?.({
-    stage: result.drafts.length ? '识别完成，正在自动导入。' : '课程目录识别完成，请补选课表图片。',
-    progress: 1,
-  });
-  return result;
 }
 
 async function readDocument(file: File, options: ReadOptions): Promise<ImportResult> {
@@ -98,6 +141,5 @@ async function readDocument(file: File, options: ReadOptions): Promise<ImportRes
   if (!result.drafts.length) {
     throw new Error('没有识别到课程，请换一张更清晰的课表图片或上传 Excel / CSV 文件。');
   }
-  options.onProgress?.({ stage: '识别完成，正在自动导入。', progress: 1 });
   return result;
 }

@@ -38,8 +38,14 @@ function signature(result: ImportResult) {
 
 function expectComplete(result: ImportResult) {
   expect(result.catalog, JSON.stringify(result.catalog, null, 2)).toHaveLength(13);
-  expect(result.catalog?.map(({ name, code }) => ({ name, code }))).toEqual(
-    fictionalCatalog.map(({ name, code }) => ({ name, code })),
+  expect(
+    result.catalog
+      ?.map(({ name, code }) => ({ name, code }))
+      .sort((a, b) => a.code.localeCompare(b.code)),
+  ).toEqual(
+    fictionalCatalog
+      .map(({ name, code }) => ({ name, code }))
+      .sort((a, b) => a.code.localeCompare(b.code)),
   );
   expect(result.drafts, JSON.stringify(result.drafts, null, 2)).toHaveLength(11);
   expect(

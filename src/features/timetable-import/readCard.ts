@@ -9,6 +9,7 @@ import { detectCardTextBands, suggestCardSplit } from './card-layout';
 import type { CardTextBand } from './card-layout';
 import type { ImageRect } from './image-layout';
 import type { CourseCatalogEntry } from './model';
+import { canUseCardFastPath } from './card-fast-path';
 import type { OcrText } from './ocr';
 import { contrastRegion, retryRegion } from './ocr-regions';
 import type { OcrEngine } from './ocr-regions';
@@ -76,17 +77,32 @@ export async function readCard(
   placement: { day: number; start: number; end: number } | null,
   catalog: CourseCatalogEntry[],
 ) {
-  const candidates = await retryRegion(engine, canvas, region, false, true);
-  const colorCardCount = candidates.length;
-  candidates.push(...(await contrastRegion(engine, canvas, region, true)));
-  const drafts = candidates.map((result) => cardDraft(result, source, placement, catalog));
-  const chosen =
-    drafts.find((draft) => uniqueCatalogMatch(draft.name, catalog)) ??
-    cardDraft(best(candidates), source, placement, catalog);
+  const first = await engine.scan(canvas, region);
+  const contrast = (await contrastRegion(engine, canvas, region, false, [1]))[0];
   const pixels = canvas
     .getContext('2d', { willReadFrequently: true })!
     .getImageData(0, 0, canvas.width, canvas.height);
   const bands = detectCardTextBands(pixels, region);
+  const candidates = [first];
+  if (
+    canUseCardFastPath(
+      cardDraft(first, source, placement, []),
+      cardDraft(contrast, source, placement, []),
+      catalog,
+    )
+  ) {
+    const chosen = cardDraft(first, source, placement, catalog);
+    await verifyDraftRoom(engine, canvas, region, bands, [first, contrast], first, chosen);
+    return chosen;
+  }
+  // Uncertain cards retain every scale and color/contrast variant from the full path.
+  for (const scale of [2, 3]) candidates.push(await engine.scan(canvas, region, scale));
+  const colorCardCount = candidates.length;
+  candidates.push(contrast, ...(await contrastRegion(engine, canvas, region, false, [2, 3])));
+  const drafts = candidates.map((result) => cardDraft(result, source, placement, catalog));
+  const chosen =
+    drafts.find((draft) => uniqueCatalogMatch(draft.name, catalog)) ??
+    cardDraft(best(candidates), source, placement, catalog);
   const boundary = fieldBoundary(candidates, catalog, bands);
   if (boundary === undefined || boundary <= region.y || boundary >= region.y + region.height)
     return chosen;
@@ -97,17 +113,37 @@ export async function readCard(
   const textBottom = bands.length
     ? Math.min(region.y + region.height, bands.at(-1)!.bottom + padding + 1)
     : region.y + region.height;
-  const names = await retryRegion(
-    engine,
-    canvas,
-    {
-      ...region,
-      y: textTop,
-      height: split - textTop,
-    },
-    false,
-    true,
-  );
+  let reference = uniqueCatalogMatch(chosen.name, catalog);
+  if (
+    !reference ||
+    !Number.isFinite(reference.fieldConfidence.name) ||
+    (reference.fieldConfidence.name ?? 0) < 75
+  ) {
+    const names = await retryRegion(
+      engine,
+      canvas,
+      {
+        ...region,
+        y: textTop,
+        height: split - textTop,
+      },
+      false,
+      true,
+    );
+    const name =
+      names.find((result) => uniqueCatalogMatch(compactCourseText(result.text), catalog)) ??
+      best(names);
+    reference = uniqueCatalogMatch(compactCourseText(name.text), catalog);
+    if (reference || !uniqueCatalogMatch(chosen.name, catalog)) {
+      chosen.name = reference?.name ?? compactCourseText(name.text);
+      chosen.fieldConfidence = {
+        ...chosen.fieldConfidence,
+        name: Math.max(name.confidence, reference?.fieldConfidence.name ?? 0),
+      };
+      chosen.teacher = reference?.teacher ?? '';
+      chosen.fieldConfidence.teacher = reference?.fieldConfidence.teacher;
+    }
+  }
   const rooms = await retryRegion(
     engine,
     canvas,
@@ -128,19 +164,6 @@ export async function readCard(
       true,
     )),
   );
-  const name =
-    names.find((result) => uniqueCatalogMatch(compactCourseText(result.text), catalog)) ??
-    best(names);
-  const reference = uniqueCatalogMatch(compactCourseText(name.text), catalog);
-  if (reference || !uniqueCatalogMatch(chosen.name, catalog)) {
-    chosen.name = reference?.name ?? compactCourseText(name.text);
-    chosen.fieldConfidence = {
-      ...chosen.fieldConfidence,
-      name: Math.max(name.confidence, reference?.fieldConfidence.name ?? 0),
-    };
-    chosen.teacher = reference?.teacher ?? '';
-    chosen.fieldConfidence.teacher = reference?.fieldConfidence.teacher;
-  }
   const roomCandidates: FieldCandidate[] = rooms.map((room, index) => ({
     text: compactRoomText(room.text),
     confidence: room.confidence,
@@ -167,7 +190,20 @@ export async function readCard(
   );
   if (!room) chosen.issues.push('教室识别分数低于 75，已留空。');
   if (reference && !reference.teacher) chosen.issues.push('目录中的教师识别不可靠，已留空。');
-  // Latin digits are independently checked with the bundled English model.
+  await verifyDraftRoom(engine, canvas, region, bands, [...rooms, ...candidates], first, chosen);
+  return chosen;
+}
+
+async function verifyDraftRoom(
+  engine: OcrEngine,
+  canvas: HTMLCanvasElement,
+  region: ImageRect,
+  bands: CardTextBand[],
+  results: OcrText[],
+  primary: OcrText,
+  chosen: ReturnType<typeof cardDraft>,
+) {
+  // Latin digits are independently checked on both paths with the bundled English model.
   const lastBand = bands.at(-1);
   const suffix = chosen.room.match(/[-－](\d{2,6})$/);
   if (suffix && lastBand) {
@@ -176,16 +212,15 @@ export async function readCard(
       canvas,
       region,
       lastBand,
-      [...rooms, ...candidates],
-      candidates[0],
+      results,
+      primary,
       suffix[1].length,
     );
     if (digits) chosen.room = chosen.room.replace(/[-－]\d{2,6}$/, `-${digits}`);
     else {
       chosen.room = '';
-      chosen.fieldConfidence.room = 0;
+      chosen.fieldConfidence = { ...chosen.fieldConfidence, room: 0 };
       chosen.issues.push('房号局部复核不一致，教室已留空。');
     }
   }
-  return chosen;
 }

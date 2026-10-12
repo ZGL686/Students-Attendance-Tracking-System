@@ -1,7 +1,7 @@
 import type { ImageRect } from './image-layout';
 import type { createOcr, OcrText } from './ocr';
 
-export type OcrEngine = Awaited<ReturnType<typeof createOcr>>;
+export type OcrEngine = Pick<Awaited<ReturnType<typeof createOcr>>, 'scan' | 'close' | 'recognize'>;
 
 /** Preserve antialiasing while presenting white card lettering as dark glyphs. */
 export function invertCardLuminance(pixels: Uint8ClampedArray): void {
@@ -17,6 +17,7 @@ export async function contrastRegion(
   canvas: HTMLCanvasElement,
   region: ImageRect,
   force = false,
+  scales?: number[],
 ): Promise<OcrText[]> {
   const crop = document.createElement('canvas');
   try {
@@ -38,18 +39,16 @@ export async function contrastRegion(
     const pixels = context.getImageData(0, 0, crop.width, crop.height);
     invertCardLuminance(pixels.data);
     context.putImageData(pixels, 0, 0);
-    const results = await retryRegion(
-      engine,
-      crop,
-      {
-        x: 0,
-        y: 0,
-        width: crop.width,
-        height: crop.height,
-      },
-      false,
-      force,
-    );
+    const localRegion = {
+      x: 0,
+      y: 0,
+      width: crop.width,
+      height: crop.height,
+    };
+    const results: OcrText[] = [];
+    if (scales) {
+      for (const scale of scales) results.push(await engine.scan(crop, localRegion, scale));
+    } else results.push(...(await retryRegion(engine, crop, localRegion, false, force)));
     return results.map((result) => ({
       ...result,
       tokens: result.tokens.map((token) => ({

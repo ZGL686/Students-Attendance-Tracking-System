@@ -57,7 +57,14 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
         catalog,
         signal: controller.signal,
         onProgress: (next) => {
-          if (!controller.signal.aborted) setProgress(next);
+          if (!controller.signal.aborted)
+            setProgress((previous) => ({
+              ...next,
+              progress: Math.max(
+                previous.progress,
+                Math.min(0.97, Math.max(0, Number.isFinite(next.progress) ? next.progress : 0)),
+              ),
+            }));
         },
       });
       if (controller.signal.aborted) return;
@@ -223,7 +230,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
     >
       <div className="timetable-import">
         <p className="inline-note">
-          可同时选择课程目录和课表图片；识别完整的上课安排会自动追加保存。
+          可一次选择多张目录图、课表图和文件；合并识别结果后一次追加保存，重复安排自动跳过。
         </p>
         <div className="import-picker-grid">
           <input

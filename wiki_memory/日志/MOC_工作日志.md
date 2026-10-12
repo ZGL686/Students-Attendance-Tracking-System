@@ -19,6 +19,7 @@ supersedes: null
 | 2026-10-12 | maintenance | - | archived | ludian-simulator-restart-launcher | [[日志/2026-10-12-Ludian模拟器重启后恢复与启动入口.md|Ludian 模拟器重启后恢复与启动入口]] |
 | 2026-10-12 | feature | - | archived | ludian-phone-simulator-empty-students | [[日志/2026-10-12-Ludian模拟器取消示例学生.md|Ludian 模拟器取消示例学生]] |
 | 2026-10-12 | maintenance | - | archived | ludian-main-fast-forward-merge-95912af | [[日志/2026-10-12-Ludian支线快进合并主线.md|Ludian 支线快进合并主线]] |
+| 2026-10-12 | bug | - | archived | ludian-batch-import-progress-and-performance | [[日志/2026-10-12-Ludian批量并集导入与识别进度提速.md|Ludian 批量并集导入与识别进度提速]] |
 | 2026-10-12 | ui | - | archived | ludian-mobile-database-no-calculation-controls | [[日志/2026-10-12-Ludian手机数据库移除列计算区.md|Ludian 手机数据库移除列计算区]] |
 | 2026-10-12 | bug | - | archived | ludian-image-timetable-catalog-and-card-ocr | [[日志/2026-10-12-Ludian多图目录联用与课程块识别修复.md|Ludian 多图目录联用与课程块识别修复]] |
 | 2026-10-11 | maintenance | - | archived | ludian-0-5-6-source-clone-local-build | [[日志/2026-10-11-Ludian-0.5.6源码克隆与本地安装包.md|Ludian 0.5.6 源码克隆与本地安装包]] |

@@ -1,6 +1,7 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { abortable, checkAborted, offlineUrl } from './model';
 import type { CourseDraft, ImportSource, ReadOptions } from './model';
+import { createImportProgress } from './import-progress';
 import { createOcr } from './ocr';
 import { parsePositionedText } from './parse';
 import type { PositionedText } from './parse';
@@ -60,8 +61,10 @@ export async function readPdf(
   warnings: string[];
 }> {
   const { signal, onProgress, selection } = options;
-  onProgress?.({ stage: '正在读取 PDF…', progress: 0.05 });
+  const progress = createImportProgress(onProgress, signal);
+  progress.phase('正在读取 PDF…', 0, 0.05);
   const { document: pdf, task, pdfjs } = await openPdf(file, signal);
+  progress.finish();
   const sources = sourcesFor(pdf);
   const chosen = sources.filter((source) => !selection || selection.includes(source.index));
   const drafts: CourseDraft[] = [],
@@ -75,10 +78,10 @@ export async function readPdf(
     for (let index = 0; index < chosen.length; index++) {
       checkAborted(signal);
       const source = chosen[index];
-      onProgress?.({
-        stage: `正在分析 PDF 第 ${source.index + 1} 页…`,
-        progress: index / chosen.length,
-      });
+      const start = 0.05 + (0.9 * index) / chosen.length;
+      const end = 0.05 + (0.9 * (index + 1)) / chosen.length;
+      const pageLabel = `PDF 第 ${source.index + 1} 页（${index + 1}/${chosen.length}）`;
+      progress.phase(`正在分析${pageLabel}…`, start, end, 2);
       const page = await abortable(pdf.getPage(source.index + 1), signal);
       try {
         const label = `${file.name} · 第 ${source.index + 1} 页`;
@@ -112,9 +115,11 @@ export async function readPdf(
           !tokens.some((token) => /\uFFFD/.test(token.text))
         ) {
           drafts.push(...extracted);
+          progress.finish();
           continue;
         }
-        ocr ??= await createOcr(options);
+        progress.phase(`正在离线识别${pageLabel}…`, start, end, 2);
+        ocr ??= await createOcr({ ...options, onProgress: progress.worker });
         const maxScale = Math.sqrt(16_000_000 / (viewport.width * viewport.height));
         if (!Number.isFinite(maxScale) || maxScale <= 0) throw new Error('PDF 页面尺寸无效。');
         const canvas = window.document.createElement('canvas');
@@ -161,10 +166,14 @@ export async function readPdf(
           canvas.width = 0;
           canvas.height = 0;
         }
+        progress.finish();
       } finally {
         page.cleanup();
       }
     }
+    checkAborted(signal);
+    progress.phase('PDF 识别完成，正在合并课程…', 0.95, 0.97);
+    progress.finish();
     return { drafts, sources, warnings };
   } finally {
     signal?.removeEventListener('abort', cancelDocument);
