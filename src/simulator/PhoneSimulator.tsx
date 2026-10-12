@@ -176,7 +176,7 @@ export function PhoneSimulator() {
             <span className="preview-dot" />
             <div>
               <strong>真实页面，可直接操作</strong>
-              <p>独立的虚构课表与学生数据。可切换五个页面，刷新后保留演示修改。</p>
+              <p>独立的演示课表，学生名单初始为空。可切换五个页面，刷新后保留修改。</p>
             </div>
           </div>
           <button

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Frame, Page } from '@playwright/test';
+import type { AppData } from '../../src/model';
 
 const phoneSelector = 'iframe[title="Ludian 手机预览"]';
 const pages = [
@@ -126,6 +127,104 @@ test('REDMI preview opens the real course workspace with five complete navigatio
   await expect(page.getByLabel('系统导航', { exact: true })).toHaveValue('buttons');
   await expectSafeNavigation(page, frame, 48);
   await page.screenshot({ path: testInfo.outputPath('redmi-three-buttons.png'), fullPage: true });
+});
+
+test('new previews show an empty student list with add and import actions', async ({
+  page,
+}, testInfo) => {
+  const frame = await openPhone(page);
+  await frame
+    .getByRole('navigation')
+    .getByRole('button', { name: '学生数据库', exact: true })
+    .click();
+  await expect(frame.getByText('还没有导入学生名单', { exact: true })).toBeVisible();
+  await expect(frame.getByRole('button', { name: '添加学生', exact: true })).toBeVisible();
+  await expect(frame.getByRole('button', { name: '导入学生名单', exact: true })).toBeVisible();
+  await expect(frame.locator('.mobile-lookup-card')).toHaveCount(0);
+  await expect(frame.getByText(/示例同学/)).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('empty-students.png'), fullPage: true });
+});
+
+test('legacy preview students are removed once while manual data and the original snapshot survive', async ({
+  page,
+}) => {
+  let frame = await openPhone(page);
+  const legacy = await frame.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('ludian-phone-simulator', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const stored = await new Promise<{ revision: number; payload: string }>((resolve, reject) => {
+      const request = database
+        .transaction('snapshots')
+        .objectStore('snapshots')
+        .openCursor(null, 'prev');
+      request.onsuccess = () => resolve(request.result!.value);
+      request.onerror = () => reject(request.error);
+    });
+    const data = JSON.parse(stored.payload) as AppData;
+    const workspace = data.workspaces[0];
+    workspace.students = ['甲', '乙', '丙'].map((suffix, index) => ({
+      id: `sim-student-${index + 1}`,
+      number: `SIM-00${index + 1}`,
+      name: `示例同学${suffix}`,
+      group: '演示组',
+    }));
+    workspace.students.push({
+      id: 'manual-student',
+      number: 'MANUAL-001',
+      name: '虚构手动验收同学',
+      group: '',
+    });
+    const snapshot = {
+      revision: stored.revision + 1,
+      payload: JSON.stringify(data),
+      savedAt: '2026-10-12T00:00:00Z',
+    };
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction('snapshots', 'readwrite');
+      transaction.objectStore('snapshots').add(snapshot);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+    return snapshot;
+  });
+  frame = await openPhone(page);
+  await frame
+    .getByRole('navigation')
+    .getByRole('button', { name: '学生数据库', exact: true })
+    .click();
+  await expect(frame.locator('.mobile-lookup-card')).toHaveCount(1);
+  await expect(frame.locator('.mobile-lookup-list')).toContainText('虚构手动验收同学');
+  await expect(frame.getByText(/示例同学/)).toHaveCount(0);
+  frame = await openPhone(page);
+  const snapshots = await frame.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('ludian-phone-simulator', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const result = await new Promise<{ revision: number; payload: string; savedAt: string }[]>(
+      (resolve, reject) => {
+        const request = database.transaction('snapshots').objectStore('snapshots').getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      },
+    );
+    database.close();
+    return result;
+  });
+  expect(snapshots.map((snapshot) => snapshot.revision)).toEqual([
+    1,
+    legacy.revision,
+    legacy.revision + 1,
+  ]);
+  expect(snapshots[1]).toEqual(legacy);
+  const current = JSON.parse(snapshots[2].payload) as AppData;
+  expect(current.workspaces[0].students.map((student) => student.id)).toEqual(['manual-student']);
+  expect(current.workspaces[0].courses).toHaveLength(10);
 });
 
 test('switching to gestures changes the real app safe inset and leaves labels above the system bar', async ({

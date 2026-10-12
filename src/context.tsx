@@ -23,9 +23,11 @@ export const useApp = () => useContext(C)!;
 export function AppProvider({
   children,
   initialData,
+  migrateData,
 }: {
   children: ReactNode;
   initialData?: () => AppData;
+  migrateData?: (data: AppData) => AppData | null;
 }) {
   const [data, setData] = useState<AppData>();
   const [revision, setRevision] = useState(0);
@@ -59,6 +61,12 @@ export function AppProvider({
               : await loadSeed();
           current = { data: initial, revision: await storage.save(initial, 0) };
         }
+        const migrated = migrateData?.(current.data);
+        if (migrated)
+          current = {
+            data: migrated,
+            revision: await storage.save(migrated, current.revision),
+          };
         state.current = current;
         setData(current.data);
         setRevision(current.revision);
@@ -66,7 +74,7 @@ export function AppProvider({
         setFatal(`读取数据失败，未覆盖已有数据。${String(e)}`);
       }
     })();
-  }, [initialData]);
+  }, [initialData, migrateData]);
   useEffect(() => {
     if (!notice || notice.error) return;
     const t = setTimeout(() => setNotice(null), 4200);

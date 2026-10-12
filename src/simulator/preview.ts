@@ -1,7 +1,7 @@
 import { mountApp } from '../app/bootstrap';
 import { browserPreferenceKey } from '../browserEnvironment';
 import { defaultPreferences, preferenceKey } from '../preferences/model';
-import { createSimulatorData } from './demo';
+import { createSimulatorData, removeSimulatorStudents } from './demo';
 
 function setInsets(top: number, bottom: number) {
   const root = document.documentElement;
@@ -47,4 +47,4 @@ try {
   // The application reports preference-storage errors through its normal UI.
 }
 
-mountApp(createSimulatorData);
+mountApp(createSimulatorData, removeSimulatorStudents);

@@ -7,12 +7,6 @@ export function createSimulatorData(): AppData {
   workspace.startDate = addDays(monday(beijingNow().date), -35);
   workspace.totalWeeks = 18;
   workspace.notes = '';
-  workspace.students = ['甲', '乙', '丙'].map((suffix, index) => ({
-    id: `sim-student-${index + 1}`,
-    number: `SIM-00${index + 1}`,
-    name: `示例同学${suffix}`,
-    group: '演示组',
-  }));
   const courses: [string, number, number, Course['color']][] = [
     ['程序设计', 1, 1, 'blue'],
     ['界面设计', 1, 3, 'teal'],
@@ -41,4 +35,38 @@ export function createSimulatorData(): AppData {
     activeWorkspaceId: workspace.id,
     workspaces: [workspace],
   });
+}
+
+/** Preview-only cleanup; the caller saves a new snapshot and retains the old one. */
+export function removeSimulatorStudents(data: AppData): AppData | null {
+  const removedByWorkspace = data.workspaces.map(
+    (workspace) =>
+      new Set(
+        workspace.students
+          .filter((student) =>
+            ['甲', '乙', '丙'].some(
+              (suffix, index) =>
+                student.id === `sim-student-${index + 1}` &&
+                student.number === `SIM-00${index + 1}` &&
+                student.name === `示例同学${suffix}`,
+            ),
+          )
+          .map((student) => student.id),
+      ),
+  );
+  if (!removedByWorkspace.some((ids) => ids.size)) return null;
+  const next = structuredClone(data);
+  next.workspaces.forEach((workspace, index) => {
+    const students = removedByWorkspace[index];
+    const records = new Set(
+      workspace.records
+        .filter((record) => students.has(record.studentId))
+        .map((record) => record.id),
+    );
+    workspace.students = workspace.students.filter((student) => !students.has(student.id));
+    workspace.records = workspace.records.filter((record) => !records.has(record.id));
+    for (const id of students) delete workspace.databases.students.cells[id];
+    for (const id of records) delete workspace.databases.records.cells[id];
+  });
+  return dataSchema.parse(next);
 }

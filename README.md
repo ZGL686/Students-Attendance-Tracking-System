@@ -50,7 +50,7 @@ npm run release
 - 根据用户提供的 REDMI Turbo 4 Pro（6.83 英寸、1280×2772、HyperOS 2、三按钮导航）保留屏幕比例，默认网页视口为 **400×866 CSS px**。这是可调的预览参数；真实 CSS 视口取决于手机显示密度设置。
 - 三按钮模式模拟 **48px** 底部系统区，手势模式为 **24px**。应用使用 `safe-area-inset-bottom`，并与模拟安全区取较大值，再增加 6px 间隔；图标和文字完整留在系统区域上方。
 - 可调整宽高、旋转屏幕、切换自动适应或 100% 尺寸。窄浏览器中点击“模拟设置”展开控制；自动适应显示整机，100% 模式支持在预览区滚动。
-- 预览使用独立的 `ludian-phone-simulator` IndexedDB、外观偏好和 Android 导入标记，仅初始化虚构学生及示例课程。演示修改刷新后保留，普通网页和桌面数据不进入模拟器。
+- 预览使用独立的 `ludian-phone-simulator` IndexedDB、外观偏好和 Android 导入标记；首次创建示例课程，学生名单初始为空。旧预览中的默认示例同学会自动清理并保留原快照，手动添加及已更名 / 改学号的学生继续保留。修改刷新后保留，普通网页和桌面数据不进入模拟器。
 - 修改应用源码后 Vite 会热更新。模拟器入口用于本地开发；`npm run build` 继续构建普通应用，不把演示入口放入 Windows / Android 发行页面。
 
 模拟器验收：`npx playwright test tests/e2e/phone-simulator.spec.ts`。浏览器系统栏是布局占位，不替代 Android APK 实机验收。
