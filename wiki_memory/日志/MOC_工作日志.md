@@ -17,6 +17,7 @@ supersedes: null
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-12 | feature | - | archived | ludian-browser-phone-simulator | [[日志/2026-10-12-Ludian浏览器手机模拟器与安全区验收.md|Ludian 浏览器手机模拟器与安全区验收]] |
 | 2026-10-12 | feature | - | archived | ludian-phone-simulator-empty-students | [[日志/2026-10-12-Ludian模拟器取消示例学生.md|Ludian 模拟器取消示例学生]] |
+| 2026-10-12 | maintenance | - | archived | ludian-main-fast-forward-merge-95912af | [[日志/2026-10-12-Ludian支线快进合并主线.md|Ludian 支线快进合并主线]] |
 | 2026-10-12 | ui | - | archived | ludian-mobile-database-no-calculation-controls | [[日志/2026-10-12-Ludian手机数据库移除列计算区.md|Ludian 手机数据库移除列计算区]] |
 | 2026-10-11 | maintenance | - | archived | ludian-0-5-6-source-clone-local-build | [[日志/2026-10-11-Ludian-0.5.6源码克隆与本地安装包.md|Ludian 0.5.6 源码克隆与本地安装包]] |
 | 2026-10-09 | feature | 让手机底部导航避开系统功能区并清晰可读；让图片与文件课表统一按星期列、节次行、课程格自动导入。 | archived | ludian-mobile-nav-and-timetable-grid-import | [[日志/2026-10-09-Ludian手机导航可读性与课表网格识别.md|2026-10-09｜Ludian 手机导航可读性与课表网格识别]] |
