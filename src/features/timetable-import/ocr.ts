@@ -6,6 +6,8 @@ import type { ImageRect } from './image-layout';
 import { createManagedOcrWorker } from './managed-ocr-worker';
 import type { ManagedOcrWorker } from './managed-ocr-worker';
 
+export { imageCanvas } from './image-canvas';
+
 export type OcrText = { text: string; tokens: PositionedText[]; confidence: number };
 export type OcrMode = 'block' | 'line' | 'sparse' | 'digits';
 
@@ -176,27 +178,4 @@ export async function createOcr(
         : parseTextBlocks(result.text, source);
     },
   };
-}
-
-export async function imageCanvas(file: File, signal?: AbortSignal): Promise<HTMLCanvasElement> {
-  checkAborted(signal);
-  const bitmap = await createImageBitmap(file);
-  try {
-    checkAborted(signal);
-    if (bitmap.width * bitmap.height > 24_000_000)
-      throw new Error('图片像素过大，请裁剪课表区域后重试（最多 2400 万像素）。');
-    const canvas = document.createElement('canvas');
-    // Preserve the source pixels. Interpolating an already legible screenshot can
-    // turn Chinese strokes into shapes the OCR model recognizes as Latin glyphs.
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const context = canvas.getContext('2d');
-    if (!context) throw new Error('无法创建图片识别画布。');
-    context.fillStyle = '#fff';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    return canvas;
-  } finally {
-    bitmap.close();
-  }
 }

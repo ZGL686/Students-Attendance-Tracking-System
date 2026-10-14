@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-10-12
+updated: 2026-10-14
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-14 | bug | - | archived | ludian-android-image-axes-and-import-outcome | [[日志/2026-10-14-Ludian安卓图片课表定位与保存提示修复.md|Ludian 安卓图片课表定位与保存提示修复]] |
 | 2026-10-12 | feature | - | archived | ludian-browser-phone-simulator | [[日志/2026-10-12-Ludian浏览器手机模拟器与安全区验收.md|Ludian 浏览器手机模拟器与安全区验收]] |
 | 2026-10-12 | maintenance | - | archived | ludian-simulator-restart-launcher | [[日志/2026-10-12-Ludian模拟器重启后恢复与启动入口.md|Ludian 模拟器重启后恢复与启动入口]] |
 | 2026-10-12 | feature | - | archived | ludian-phone-simulator-empty-students | [[日志/2026-10-12-Ludian模拟器取消示例学生.md|Ludian 模拟器取消示例学生]] |

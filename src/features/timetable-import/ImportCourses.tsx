@@ -22,6 +22,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
   const [quickEnd, setQuickEnd] = useState('2');
   const [quickWeeks, setQuickWeeks] = useState(`1-${Math.min(16, target?.totalWeeks ?? 16)}`);
   const [summary, setSummary] = useState('');
+  const [savedCourses, setSavedCourses] = useState(0);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [catalog, setCatalog] = useState<CourseCatalogEntry[]>([]);
@@ -47,6 +48,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
     setError('');
     setNoCourseReason('');
     setSummary('');
+    setSavedCourses(0);
     setSkipped([]);
     setWarnings([]);
     setCatalogOnly(false);
@@ -92,23 +94,24 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
         'append',
         currentTarget.totalWeeks,
       );
+      const rejected = ready.issues.map((issue) => {
+        const draft = drafts.find((item) => item.id === issue.draftId);
+        return `${draft?.name || '未识别课程'}（${draft?.source || '课表'}）：${issue.message.replace('请调整或取消选中。', '本次已跳过。')}`;
+      });
+      setSkipped(rejected);
       if (!ready.courses.length && !ready.duplicates) {
         setWarnings(importWarnings);
-        setSkipped(
-          ready.issues.map((issue) => {
-            const draft = drafts.find((item) => item.id === issue.draftId);
-            return `${draft?.name || '未识别课程'}：${issue.message}`;
-          }),
-        );
         setNoCourseReason(
           result.drafts.length
-            ? `识别到了 ${result.drafts.length} 条内容，但缺少可保存的完整课程信息。课程表没有修改；请在下面补录名称、星期、节次和周次。`
+            ? `识别到了 ${result.drafts.length} 条内容，但本次没有可追加的课程。请查看未导入原因；课程表没有修改，可在下面补录课程。`
             : '没有识别到课程，课程表没有修改。你可以重新选择清晰图片或文件，也可以直接在下面补录课程。',
         );
         return;
       }
       if (!ready.courses.length && ready.duplicates) {
-        const message = `识别到的 ${ready.duplicates} 门课程已存在，没有重复添加。`;
+        const message = rejected.length
+          ? `识别完成，本次未新增课程：${ready.duplicates} 门已存在，${rejected.length} 项无法导入。课程表没有修改。`
+          : `识别到的 ${ready.duplicates} 门课程已存在，没有重复添加。`;
         setSummary(message);
         setWarnings(importWarnings);
         notify(message);
@@ -134,6 +137,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
         setError('导入未保存，请按错误提示处理后重新选择文件。');
         return;
       }
+      setSavedCourses(outcome.imported);
       const message = `已导入 ${outcome.imported} 门课程，跳过 ${outcome.duplicates} 门重复课程${outcome.skipped.length ? `，${outcome.skipped.length} 项无法导入` : ''}。`;
       setSummary(message);
       setSkipped(outcome.skipped);
@@ -215,6 +219,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
     savingRef.current = false;
     setSaving(false);
     if (saved) {
+      setSavedCourses((count) => count + 1);
       setQuickName('');
       setSummary('课程已添加。可以继续补录下一门，或重新选择课表文件。');
       setNoCourseReason('');
@@ -313,7 +318,10 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
               <div>
                 <h3>{noCourseReason ? '课表没有改动' : '补录未导入的课程'}</h3>
                 <p>
-                  {noCourseReason || '其余识别完整的课程已保存；可在这里补录下面未导入的课程。'}
+                  {noCourseReason ||
+                    (savedCourses > 0
+                      ? '有效课程已保存；可在这里补录下面未导入的课程。'
+                      : '本次没有新增课程；请查看未导入原因，也可在这里补录课程。')}
                 </p>
               </div>
             </div>

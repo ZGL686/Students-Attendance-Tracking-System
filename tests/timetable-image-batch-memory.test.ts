@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({
   finish: vi.fn(),
   readCard: vi.fn(),
   retry: vi.fn(),
+  decode: vi.fn(),
 }));
 vi.mock('../src/features/timetable-import/ocr', () => ({
   createOcr: async () => ({
@@ -14,17 +15,7 @@ vi.mock('../src/features/timetable-import/ocr', () => ({
     close: state.close,
     finishImageAnalysis: state.finish,
   }),
-  imageCanvas: async (file: File) => {
-    expect(state.canvases.filter((c) => c.width && c.height)).toHaveLength(0);
-    const canvas = {
-      width: 200,
-      height: 200,
-      label: file.name,
-      getContext: () => ({ getImageData: () => ({ label: file.name }) }),
-    };
-    state.canvases.push(canvas);
-    return canvas;
-  },
+  imageCanvas: state.decode,
 }));
 vi.mock('../src/features/timetable-import/image-layout', () => ({
   detectColoredRegions: (pixels: { label: string }) =>
@@ -52,6 +43,17 @@ const file = (name: string) => new File(['fictional'], name);
 beforeEach(() => {
   vi.resetAllMocks();
   state.canvases.length = 0;
+  state.decode.mockImplementation(async (file: File) => {
+    expect(state.canvases.filter((c) => c.width && c.height)).toHaveLength(0);
+    const canvas = {
+      width: 200,
+      height: 200,
+      label: file.name,
+      getContext: () => ({ getImageData: () => ({ label: file.name }) }),
+    };
+    state.canvases.push(canvas);
+    return canvas;
+  });
   state.scan.mockResolvedValue({ text: '虚构目录课程', tokens: [], confidence: 95 });
   state.retry.mockResolvedValue([{ text: '虚构目录课程', tokens: [], confidence: 95 }]);
   state.finish.mockResolvedValue(undefined);
@@ -88,7 +90,42 @@ describe('bounded multi-image canvases', () => {
   it('releases the current decoded image and closes the engine when card recognition fails', async () => {
     state.readCard.mockRejectedValueOnce(new Error('fictional failed'));
     await expect(readImages([file('catalog.png'), file('card.png')], {})).rejects.toThrow(
-      'fictional failed',
+      '图片“card.png” · 识别课程格 1/1失败：fictional failed',
+    );
+    expectReleased();
+  });
+  it('announces the decode stage before awaiting it and keeps batch progress monotonic', async () => {
+    const progress = vi.fn();
+    await readImages([file('catalog.png'), file('card.png')], { onProgress: progress });
+    const reports = progress.mock.calls.map(([value]) => value);
+    expect(reports[1].stage).toBe('正在解码图片 1/2（catalog.png）…');
+    expect(progress.mock.invocationCallOrder[1]).toBeLessThan(
+      state.decode.mock.invocationCallOrder[0],
+    );
+    expect(reports.some((value) => value.stage === '正在解码课程目录（catalog.png）…')).toBe(true);
+    expect(reports.some((value) => value.stage === '正在解码课表（card.png）…')).toBe(true);
+    const values = reports.map((value) => value.progress);
+    expect(values).toEqual([...values].sort((a, b) => a - b));
+    expectReleased();
+  });
+  it('preserves the filename and decode error without adding a second prefix', async () => {
+    const error = new Error('图片“catalog.png” · 解码失败：fictional decoder failed');
+    state.decode.mockRejectedValueOnce(error);
+    await expect(readImages([file('catalog.png')], {})).rejects.toBe(error);
+    expect(state.canvases).toHaveLength(0);
+    expectReleased();
+  });
+  it('identifies the source file and whole-image scan phase when analysis fails', async () => {
+    state.scan.mockRejectedValueOnce(new Error('fictional scan failed'));
+    await expect(readImages([file('catalog.png')], {})).rejects.toThrow(
+      '图片“catalog.png” · 读取整图文字失败：fictional scan failed',
+    );
+    expectReleased();
+  });
+  it('identifies the source file and directory row when a regional scan fails', async () => {
+    state.retry.mockRejectedValueOnce(new Error('fictional region failed'));
+    await expect(readImages([file('catalog.png')], {})).rejects.toThrow(
+      '图片“catalog.png” · 读取课程目录第 1 行失败：fictional region failed',
     );
     expectReleased();
   });

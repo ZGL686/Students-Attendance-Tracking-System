@@ -1439,7 +1439,7 @@ dependencies = [
 
 [[package]]
 name = "guilu"
-version = "0.5.7"
+version = "0.5.8"
 dependencies = [
  "rusqlite",
  "serde",

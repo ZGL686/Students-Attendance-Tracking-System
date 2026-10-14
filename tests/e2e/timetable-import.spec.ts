@@ -127,6 +127,30 @@ test('duplicates do not write again and a mixed batch saves only complete noncon
   expect(after.data.workspaces[0].courses.at(-1)?.name).toBe('月球摄影');
 });
 
+test('a duplicate plus blocked arrangements shows every reason without claiming a save', async ({
+  page,
+}) => {
+  await uploadCsv(page, row);
+  await expect(page.getByRole('dialog', { name: '导入课程', exact: true })).toHaveCount(0);
+  const before = await snapshot(page);
+  const dialog = await uploadCsv(
+    page,
+    row + '冲突课程,虚构教师,测试室,周日,9,10,1-16\n' + '缺失周次课程,虚构教师,测试室,周六,7,8,\n',
+  );
+  await expect(dialog.locator('.import-summary')).toContainText(
+    '本次未新增课程：1 门已存在，2 项无法导入',
+  );
+  await expect(dialog.locator('.import-skipped')).toContainText('冲突课程');
+  await expect(dialog.locator('.import-skipped')).toContainText('重叠');
+  await expect(dialog.locator('.import-skipped')).toContainText('缺失周次课程');
+  await expect(dialog.locator('.import-summary')).not.toContainText('已导入');
+  await expect(dialog.getByRole('region', { name: '手动补录课程', exact: true })).toContainText(
+    '本次没有新增课程',
+  );
+  await expect(dialog).not.toContainText('课程已保存');
+  expect(await snapshot(page)).toEqual(before);
+});
+
 test('automatic append retains students and historical attendance', async ({ page }) => {
   await page
     .getByRole('navigation')
@@ -182,9 +206,10 @@ test('an aborted storage transaction keeps the original snapshot and does not sh
       return request;
     };
   });
-  const dialog = await uploadCsv(page, row);
+  const dialog = await uploadCsv(page, row + '缺失周次课程,虚构教师,测试室,周六,7,8,\n');
   await expect(dialog.getByRole('alert')).toContainText('导入未保存');
   await expect(dialog.locator('.import-summary')).toHaveCount(0);
+  await expect(dialog).not.toContainText('课程已保存');
   expect(await snapshot(page)).toEqual(before);
   await page.reload();
   await expect(page.locator('.calendar .course-card').filter({ hasText: '星际绘画' })).toHaveCount(

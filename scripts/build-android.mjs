@@ -6,6 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const env = { ...process.env, LUDIAN_ANDROID_BUILD: '1' };
 
 for (const args of [
+  ['scripts/prepare-android-native.mjs'],
   ['scripts/prepare-offline.mjs'],
   ['node_modules/typescript/bin/tsc', '-b'],
   ['node_modules/vite/bin/vite.js', 'build', '--config', 'vite.config.ts'],

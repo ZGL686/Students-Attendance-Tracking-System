@@ -21,7 +21,9 @@ Ludian 使用 Tauri 2 打包 Android 应用，最低支持 Android 7.0（SDK 24�
 
 生成的 `src-tauri/gen/android` 属于本机工具链输出，不纳入 Git；新环境首次构建需运行初始化命令。0.5.1 Android 前端打包全部离线主题及 OCR/PDF 的 Worker、WASM 和中英文语言数据，恢复手机本地导入；构建脚本自动准备这些资源。原始主题 PNG 不进入 APK，使用压缩后的 WebP。
 
-本机已配置 JDK 17、SDK 36、NDK 29 和两种 Rust 手机目标，位于忽略目录 `.local/android-toolchain`。构建时设置 `JAVA_HOME`、`ANDROID_HOME`、`NDK_HOME` 和 `GRADLE_USER_HOME` 指向对应目录。Windows 跨盘符 Kotlin 增量缓存失败时，可在生成工程的 `gradle.properties` 设置 `kotlin.incremental=false`。依赖镜像如需配置，根工程及 `buildSrc` 的插件和依赖仓库都需要检查。
+0.5.8 的 `build:android` 先运行 `scripts/prepare-android-native.mjs`，将受版本控制的 `src-tauri/android/` 模板复制到生成工程，保留窗口安全区处理。模板为 WebView 的 Worker 子资源注册本地请求处理，仅允许固定应用域的 `GET /offline/`，使用原 Rust 资源接口，不增加外网访问。脚本校验应用标识及路径，已有不同内容先备份到本机 `.local/android-native-backup/`；重复执行不改相同文件。无需在忽略目录手工修改兼容代码。
+
+本机已配置 JDK 17、SDK 36、NDK 29 和两种 Rust 手机目标，实际工具链在 `D:\Ludian\-\.local\android-toolchain`，当前仓库下的同名目录并不存在。构建时设置 `JAVA_HOME`、`ANDROID_HOME`、`NDK_HOME` 和 `GRADLE_USER_HOME` 指向实际安装目录；其他电脑按各自安装位置设置。Windows 跨盘符 Kotlin 增量缓存失败时，可在生成工程的 `gradle.properties` 设置 `kotlin.incremental=false`。依赖镜像如需配置，根工程及 `buildSrc` 的插件和依赖仓库都需要检查。
 
 ## 签名与构建
 

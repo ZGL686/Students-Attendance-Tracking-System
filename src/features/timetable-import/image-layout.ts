@@ -97,6 +97,7 @@ type AxisFit = { step: number; offset: number; anchors: AxisAnchor[]; error: num
 /** Choose a consistent majority, then refine it without relying on consecutive OCR labels. */
 function fitAxis(anchors: AxisAnchor[], minimumStep: number, maximumStep: number) {
   let best: AxisFit | undefined;
+  const contenders: AxisFit[] = [];
   for (let first = 0; first < anchors.length; first++)
     for (let second = first + 1; second < anchors.length; second++) {
       const a = anchors[first];
@@ -123,6 +124,9 @@ function fitAxis(anchors: AxisAnchor[], minimumStep: number, maximumStep: number
         (sum, anchor) => sum + Math.abs(anchor.position - (offset + step * anchor.value)),
         0,
       );
+      if (!best || unique.length > best.anchors.length) contenders.length = 0;
+      if (!best || unique.length >= best.anchors.length)
+        contenders.push({ step, offset, anchors: unique, error });
       if (
         !best ||
         unique.length > best.anchors.length ||
@@ -131,6 +135,26 @@ function fitAxis(anchors: AxisAnchor[], minimumStep: number, maximumStep: number
         best = { step, offset, anchors: unique, error };
     }
   if (!best) return undefined;
+  const bounds = [
+    Math.min(...anchors.map((anchor) => anchor.value)),
+    Math.max(...anchors.map((anchor) => anchor.value)),
+  ];
+  const chosen = best;
+  const ambiguous = contenders.some((candidate) => {
+    const spacing = Math.min(candidate.step, chosen.step);
+    const comparableError = Math.max(2, spacing * 0.03) * chosen.anchors.length;
+    return (
+      candidate.error <= chosen.error + comparableError &&
+      bounds.some(
+        (value) =>
+          Math.abs(
+            candidate.offset + candidate.step * value - chosen.offset - chosen.step * value,
+          ) > Math.max(4, spacing * 0.18),
+      )
+    );
+  });
+  // Multiple OCR passes must agree on the axis; input order is not evidence for choosing one.
+  if (ambiguous) return undefined;
   const steps: number[] = [];
   for (let first = 0; first < best.anchors.length; first++)
     for (let second = first + 1; second < best.anchors.length; second++) {
@@ -152,6 +176,32 @@ function weekday(token: PositionedText) {
   return match ? '一二三四五六日'.indexOf(match[1]) + 1 : undefined;
 }
 
+/** OCR may keep a complete calendar-heading row in one word instead of seven. */
+function splitWeekdayTokens(tokens: PositionedText[]): PositionedText[] {
+  return tokens.flatMap((token) => {
+    const text = token.text.replace(/\s+/g, '').replaceAll('天', '日');
+    const matches = [...text.matchAll(/(?:星期|周|礼拜)?[一二三四五六日]/g)];
+    if (matches.length < 2 || matches.map((match) => match[0]).join('') !== text) return [token];
+    const days = matches.map((match) => '一二三四五六日'.indexOf(match[0].at(-1)!) + 1);
+    // Repeated or reversed words may belong to prose; only a calendar row is split.
+    if (days.some((day, index) => index > 0 && day !== days[index - 1] + 1)) return [token];
+    const glyphWidth = Math.min(token.height, token.width / matches.length);
+    const firstWidth = Math.min(token.width / matches.length, glyphWidth * matches[0][0].length);
+    const lastWidth = Math.min(
+      token.width / matches.length,
+      glyphWidth * matches.at(-1)![0].length,
+    );
+    const firstCenter = token.x + firstWidth / 2;
+    const lastCenter = token.x + token.width - lastWidth / 2;
+    return matches.map((match, index) => ({
+      ...token,
+      text: match[0],
+      x: firstCenter + ((lastCenter - firstCenter) * index) / (matches.length - 1) - glyphWidth / 2,
+      width: glyphWidth,
+    }));
+  });
+}
+
 export function locateGridAxes(
   tokens: PositionedText[],
   regions: ImageRect[],
@@ -160,7 +210,7 @@ export function locateGridAxes(
 ): GridAxes | null {
   if (!regions.length) return null;
   const firstCardY = Math.min(...regions.map((region) => region.y));
-  const headings = tokens
+  const headings = splitWeekdayTokens(tokens)
     .map((token) => ({ token, day: weekday(token) }))
     .filter(
       (item): item is { token: PositionedText; day: number } =>
@@ -168,7 +218,7 @@ export function locateGridAxes(
         item.token.y + item.token.height <= firstCardY &&
         item.token.y < height * 0.35,
     );
-  let header: { fit: NonNullable<ReturnType<typeof fitAxis>>; y: number } | undefined;
+  const headers: { fit: NonNullable<ReturnType<typeof fitAxis>>; y: number }[] = [];
   for (const candidate of headings) {
     const centerY = candidate.token.y + candidate.token.height / 2;
     const row = headings.filter(
@@ -181,10 +231,30 @@ export function locateGridAxes(
       width * 0.05,
       width * 0.5,
     );
-    if (fit && (!header || fit.anchors.length > header.fit.anchors.length))
-      header = { fit, y: median(row.map(({ token }) => token.y + token.height / 2)) };
+    if (fit) headers.push({ fit, y: median(row.map(({ token }) => token.y + token.height / 2)) });
   }
+  const header = headers.reduce<(typeof headers)[number] | undefined>(
+    (best, candidate) =>
+      !best || candidate.fit.anchors.length > best.fit.anchors.length ? candidate : best,
+    undefined,
+  );
   if (!header) return null;
+  // Equally supported but conflicting heading rows cannot establish a reliable weekday.
+  // Near-identical normal/scaled scans of the same row remain valid within the fitting tolerance.
+  const ambiguous = headers.some(
+    (candidate) =>
+      candidate.fit.anchors.length === header.fit.anchors.length &&
+      [1, 7].some(
+        (day) =>
+          Math.abs(
+            candidate.fit.offset +
+              candidate.fit.step * day -
+              header.fit.offset -
+              header.fit.step * day,
+          ) > Math.max(4, Math.min(candidate.fit.step, header.fit.step) * 0.18),
+      ),
+  );
+  if (ambiguous) return null;
   const days = Array.from({ length: 7 }, (_, index) => ({
     day: index + 1,
     x: header.fit.offset + header.fit.step * (index + 1),

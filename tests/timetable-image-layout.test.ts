@@ -120,6 +120,66 @@ describe('colored timetable geometry with fictional layout', () => {
     expect(axes?.days[6]).toEqual({ day: 7, x: 640 });
   });
 
+  it('accepts merged weekday OCR tokens while preserving the spacing between glyph centers', () => {
+    const target = coloredSchedule();
+    const regions = detectColoredRegions(target);
+    const merged = labels().filter((item) => !/^[一二三四五六日]$/.test(item.text));
+    merged.push({ text: '一 二 三 四 五 六 日', x: 89, y: 89, width: 562, height: 22 });
+    const axes = locateGridAxes(merged, regions, target.width, target.height);
+    expect(axes?.days[0]).toEqual({ day: 1, x: 100 });
+    expect(axes?.days[6]).toEqual({ day: 7, x: 640 });
+    expect(regions.map((region) => regionPlacement(region, axes!))).toEqual(
+      [...placements].sort((a, b) => a.start - b.start || a.day - b.day),
+    );
+  });
+
+  it('does not turn reversed or repeated weekday prose into an inferred calendar row', () => {
+    const regions = detectColoredRegions(coloredSchedule());
+    const tokens = labels().filter((item) => !/^[一二三四五六日]$/.test(item.text));
+    for (const text of ['日六五四三二一', '周一周一周二', '星期一至星期五'])
+      expect(
+        locateGridAxes([...tokens, token(text, 370, 100, 562)], regions, 800, 1200),
+      ).toBeNull();
+  });
+
+  it('rejects equally supported conflicting weekday rows regardless of token order', () => {
+    const days = [...'一二三四五六日'];
+    const first = days.map((day, index) => token(day, 100 + index * 90, 90));
+    const shifted = days.map((day, index) => token(day, 190 + index * 90, 150));
+    const periods = [1, 2, 3, 4, 5].map((period) => token(String(period), 35, 120 + period * 110));
+    const regions = [
+      { x: 151, y: 195, width: 78, height: 208 },
+      { x: 61, y: 415, width: 78, height: 208 },
+    ];
+    expect(locateGridAxes([...first, ...shifted, ...periods], regions, 800, 1200)).toBeNull();
+    expect(locateGridAxes([...shifted, ...first, ...periods], regions, 800, 1200)).toBeNull();
+    const repeated = first.map((item) => ({ ...item, x: item.x + 2, y: item.y + 1 }));
+    const axes = locateGridAxes([...first, ...repeated, ...periods], regions, 800, 1200);
+    expect(axes).not.toBeNull();
+    expect(regionPlacement(regions[0], axes!)).toMatchObject({ day: 2, start: 1, end: 2 });
+  });
+
+  it('rejects equally supported conflicting period scans regardless of token order', () => {
+    const headings = [...'一二三四五六日'].map((day, index) => token(day, 100 + index * 90, 90));
+    const first = [1, 2, 3, 4, 5].map((period) => token(String(period), 35, 120 + period * 110));
+    const shifted = first.map((item) => ({ ...item, y: item.y + 110 }));
+    const regions = [
+      { x: 151, y: 195, width: 78, height: 208 },
+      { x: 61, y: 415, width: 78, height: 208 },
+    ];
+    const placements = [
+      [...first, ...shifted],
+      [...shifted, ...first],
+    ].map((periods) => {
+      const axes = locateGridAxes([...headings, ...periods], regions, 800, 1200);
+      return axes ? regionPlacement(regions[0], axes) : null;
+    });
+    expect(placements).toEqual([null, null]);
+    const repeated = first.map((item) => ({ ...item, y: item.y + 2 }));
+    const axes = locateGridAxes([...headings, ...first, ...repeated], regions, 800, 1200);
+    expect(regionPlacement(regions[0], axes!)).toMatchObject({ day: 2, start: 1, end: 2 });
+  });
+
   it('requires enough consistent axes and refuses a block that spans two weekday columns', () => {
     const target = coloredSchedule();
     const regions = detectColoredRegions(target);
