@@ -50,31 +50,41 @@
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  min-height: 58px;
-  padding: 4px max(6px, env(safe-area-inset-right, 0px))
-    calc(6px + max(var(--mobile-safe-area-bottom), 18px)) max(6px, env(safe-area-inset-left, 0px));
-  border-top: 1px solid var(--line);
-  background: var(--surface-base);
+  min-height: var(--mobile-navigation-height);
+  padding: 4px max(6px, env(safe-area-inset-right, 0px)) calc(6px + var(--mobile-safe-area-bottom))
+    max(6px, env(safe-area-inset-left, 0px));
+  border-top: 1px solid var(--mobile-navigation-border);
+  background: var(--mobile-navigation-surface);
+  color: var(--mobile-navigation-ink);
+  isolation: isolate;
 }
 
 .mobile-navigation button {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
-  min-height: 50px;
-  padding: 3px 1px;
+  min-height: var(--mobile-navigation-button-height);
+  padding: 4px 2px;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.72rem;
+  color: var(--mobile-navigation-ink);
+  font-size: max(12px, 0.85rem);
+  line-height: 1.25;
+  font-weight: 600;
+  -webkit-text-fill-color: currentColor;
+  touch-action: manipulation;
 }
 
 .mobile-navigation button.active {
-  color: var(--blue);
-  background: var(--selected);
+  color: var(--mobile-navigation-active);
+  background: var(--mobile-navigation-selected);
+}
+
+.mobile-navigation button:not(.active):hover {
+  background: var(--mobile-navigation-hover);
 }
 
 .mobile-navigation button span {
@@ -95,6 +105,7 @@
 .app-shell[data-mobile='true'] .main-scroll {
   min-height: 0;
   overscroll-behavior: contain;
+  scroll-padding-bottom: 24px;
 }
 
 .app-shell[data-mobile='true'] .page-heading {

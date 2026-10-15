@@ -15,7 +15,7 @@
 }
 
 :root[data-visual-background='true'] .app-shell[data-mobile='true'] .mobile-navigation {
-  background-color: var(--surface-base) !important;
+  background-color: var(--mobile-navigation-surface) !important;
   background-image: none !important;
   backdrop-filter: none;
 }

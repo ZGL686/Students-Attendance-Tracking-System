@@ -67,6 +67,7 @@ async function expectSafeNavigation(page: Page, frame: Frame, bottom: number) {
   });
   expect(measurements.scrollWidth).toBeLessThanOrEqual(measurements.width);
   for (const [index, item] of measurements.items.entries()) {
+    expect(item.button.bottom - item.button.top).toBeGreaterThanOrEqual(52);
     expect(item.textFits).toBe(true);
     for (const box of [item.button, item.icon, item.label]) {
       expect(box.left).toBeGreaterThanOrEqual(0);

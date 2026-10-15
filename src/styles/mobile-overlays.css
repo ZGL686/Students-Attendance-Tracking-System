@@ -173,8 +173,4 @@ body[data-mobile='true'] .record-item > button.text-button {
   .mobile-category-actions {
     grid-template-columns: 1fr;
   }
-
-  .mobile-navigation button {
-    font-size: 0.66rem;
-  }
 }

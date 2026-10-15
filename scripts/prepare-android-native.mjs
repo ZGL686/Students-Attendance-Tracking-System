@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const identifier = 'cn.guilu.attendance';
-const templates = ['MainActivity.kt'];
+const templates = ['MainActivity.kt', 'AppWindowInsets.kt', 'test/AppWindowInsetsTest.kt'];
 
 function isInside(root, target) {
   const relative = path.relative(root, target);
@@ -74,7 +74,10 @@ export async function prepareAndroidNative(rootPath = projectRoot, report = cons
     if (!/^package cn\.guilu\.attendance\r?$/m.test(bytes.toString('utf8'))) {
       throw new Error(`Android template has an unexpected package: ${relative}`);
     }
-    const destination = await safePath(root, `${mainRoot}/${path.basename(relative)}`);
+    const destination = await safePath(
+      root,
+      `${relative.startsWith('test/') ? testRoot : mainRoot}/${path.basename(relative)}`,
+    );
     entries.push({ relative, bytes, destination, existing: await existingFile(destination) });
   }
   // Only these maintained Worker files are obsolete. Never walk or remove the generated tree.

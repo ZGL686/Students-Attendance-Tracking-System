@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, it } from 'vitest';
 
 const script = fileURLToPath(new URL('../scripts/prepare-android-native.mjs', import.meta.url));
 const templateRoot = fileURLToPath(new URL('../src-tauri/android/', import.meta.url));
-const nativeFiles = ['MainActivity.kt'];
+const nativeFiles = ['MainActivity.kt', 'AppWindowInsets.kt'];
 const mainRelative = 'src-tauri/gen/android/app/src/main/java/cn/guilu/attendance';
 const testRelative = 'src-tauri/gen/android/app/src/test/java/cn/guilu/attendance';
 const temporaryRoot = path.resolve(os.tmpdir());
@@ -39,6 +39,10 @@ beforeEach(async () => {
   for (const file of nativeFiles) {
     await write(`src-tauri/android/${file}`, await fs.readFile(path.join(templateRoot, file)));
   }
+  await write(
+    'src-tauri/android/test/AppWindowInsetsTest.kt',
+    await fs.readFile(path.join(templateRoot, 'test/AppWindowInsetsTest.kt')),
+  );
 });
 
 afterEach(async () => {
@@ -55,10 +59,10 @@ afterEach(async () => {
   }
 });
 
-it('copies the basic activity without an OCR Worker hook and preserves the generated activity', async () => {
+it('copies the native inset templates without an OCR hook and preserves the generated activity', async () => {
   const result = run();
   expect(result.status, result.stderr).toBe(0);
-  expect(result.stdout).toContain('1 updated, 0 unchanged, 0 obsolete');
+  expect(result.stdout).toContain('3 updated, 0 unchanged, 0 obsolete');
   expect(result.stdout).toContain('preserved existing contents');
   for (const file of nativeFiles) {
     expect(await fs.readFile(path.join(root, mainRelative, file))).toEqual(
@@ -69,6 +73,11 @@ it('copies the basic activity without an OCR Worker hook and preserves the gener
   expect(activity).toContain('enableEdgeToEdge()');
   expect(activity).not.toContain('WorkerOffline');
   expect(activity).not.toContain('onWebViewCreate');
+  expect(activity).toContain('AppWindowInsets.install(findViewById(android.R.id.content))');
+  expect(activity).toContain('SOFT_INPUT_ADJUST_RESIZE');
+  expect(await fs.readFile(path.join(root, testRelative, 'AppWindowInsetsTest.kt'))).toEqual(
+    await fs.readFile(path.join(templateRoot, 'test/AppWindowInsetsTest.kt')),
+  );
   const backupRoot = path.join(root, '.local/android-native-backup');
   const hashes = await fs.readdir(backupRoot);
   expect(hashes).toHaveLength(1);
@@ -84,7 +93,7 @@ it('does not rewrite matching templates or create additional backups on repeated
   await fs.utimes(activity, fixedTime, fixedTime);
   const result = run();
   expect(result.status, result.stderr).toBe(0);
-  expect(result.stdout).toContain('0 updated, 1 unchanged, 0 obsolete');
+  expect(result.stdout).toContain('0 updated, 3 unchanged, 0 obsolete');
   expect(result.stdout).not.toContain('preserved existing contents');
   expect((await fs.stat(activity)).mtimeMs).toBe(fixedTime.getTime());
   expect(await fs.readdir(path.join(root, '.local/android-native-backup'))).toHaveLength(1);
@@ -95,7 +104,7 @@ it('preserves subsequent generated edits before restoring the maintained templat
   await write(`${mainRelative}/MainActivity.kt`, '// a later local activity customization\n');
   const result = run();
   expect(result.status, result.stderr).toBe(0);
-  expect(result.stdout).toContain('1 updated, 0 unchanged');
+  expect(result.stdout).toContain('1 updated, 2 unchanged');
   const backupRoot = path.join(root, '.local/android-native-backup');
   const texts = await Promise.all(
     (await fs.readdir(backupRoot)).map((hash) =>
@@ -204,7 +213,21 @@ it('backs up and removes only the three obsolete generated Worker source files',
   expect(await fs.readFile(path.join(root, mainRelative, 'OtherLocalFile.kt'), 'utf8')).toBe(
     '// unrelated custom source\n',
   );
-  expect(run().stdout).toContain('0 updated, 1 unchanged, 0 obsolete');
+  expect(run().stdout).toContain('0 updated, 3 unchanged, 0 obsolete');
+});
+
+it('fits the native container and forwards zeroed insets instead of retaining stale WebView padding', async () => {
+  const source = await fs.readFile(path.join(templateRoot, 'AppWindowInsets.kt'), 'utf8');
+  expect(source).toContain('WindowInsetsCompat.Type.systemBars()');
+  expect(source).toContain('WindowInsetsCompat.Type.displayCutout()');
+  expect(source).toContain('WindowInsetsCompat.Type.ime()');
+  expect(source).toContain(
+    'view.setPadding(padding.left, padding.top, padding.right, padding.bottom)',
+  );
+  expect(source).toContain('.setInsets(bars or ime, Insets.NONE)');
+  expect(source).not.toContain('WindowInsetsCompat.CONSUMED');
+  expect(source).toContain('base.bottom + max(bars.bottom, ime.bottom)');
+  expect(source).not.toContain('bars.bottom + ime.bottom');
 });
 
 it('refuses an obsolete Worker symlink before changing any generated source', async () => {

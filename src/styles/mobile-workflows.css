@@ -400,10 +400,6 @@ body[data-mobile='true'] .theme-gallery {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-body[data-mobile='true'] .mobile-navigation button {
-  font-size: 0.85rem;
-  gap: 3px;
-}
 .phone-student-select {
   display: grid;
   place-items: center;
