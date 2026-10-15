@@ -1,18 +1,25 @@
 import { checkAborted } from './model';
 import type { ImportResult, ImportSource, ReadOptions } from './model';
+import { courseImportAccept, tableImportOnly } from './import-policy';
 
-export const importAccept = '.png,.jpg,.jpeg,.webp,.bmp,.xlsx,.csv,.pdf';
+declare const __LUDIAN_TABLE_IMPORT_ONLY__: boolean;
+
+export const importAccept = courseImportAccept;
 
 function kind(file: File): 'image' | 'excel' | 'pdf' {
   if (file.size > 20 * 1024 * 1024)
     throw new Error('课表文件不能超过 20 MB，请裁剪或只保留需要的页面。');
   if (!file.size) throw new Error('文件内容为空，请重新选择。');
   const extension = file.name.toLowerCase().split('.').pop();
+  if (extension === 'xlsx' || extension === 'csv') return 'excel';
+  if (extension === 'xls') throw new Error('暂不支持旧版 .xls，请另存为 Excel（.xlsx）后导入。');
+  if (tableImportOnly)
+    throw new Error(
+      `“${file.name}”不是支持的课表文件。请选择 Excel（.xlsx）或 CSV；手机不支持图片和 PDF 识别。`,
+    );
   if (['png', 'jpg', 'jpeg', 'webp', 'bmp'].includes(extension ?? '')) return 'image';
   if (file.type.startsWith('image/')) return 'image';
-  if (extension === 'xlsx' || extension === 'csv') return 'excel';
   if (extension === 'pdf') return 'pdf';
-  if (extension === 'xls') throw new Error('暂不支持旧版 .xls，请在 Excel 中另存为 .xlsx 后导入。');
   throw new Error('请选择 PNG、JPG、WebP、BMP 图片、Excel（.xlsx）、CSV 或 PDF 文件。');
 }
 
@@ -29,6 +36,9 @@ export async function inspectImportFile(
       return inspectExcel(file, options.signal);
     }
     case 'pdf': {
+      if (typeof __LUDIAN_TABLE_IMPORT_ONLY__ !== 'undefined' && __LUDIAN_TABLE_IMPORT_ONLY__)
+        throw new Error('手机课程导入仅支持 Excel / CSV。');
+      if (tableImportOnly) throw new Error('手机课程导入仅支持 Excel / CSV。');
       const { inspectPdf } = await import('./readPdf');
       return inspectPdf(file, options.signal);
     }
@@ -88,9 +98,14 @@ export async function readImportFiles(
     sources: [],
     warnings: [],
     catalog: options.catalog ?? [],
+    documents: [],
   };
   try {
-    if (images.length) {
+    if (
+      (typeof __LUDIAN_TABLE_IMPORT_ONLY__ === 'undefined' || !__LUDIAN_TABLE_IMPORT_ONLY__) &&
+      !tableImportOnly &&
+      images.length
+    ) {
       const { readImages } = await import('./readImages');
       result = await readGroup(`${images.length} 张图片`, images.length, (scoped) =>
         readImages(images, scoped),
@@ -104,13 +119,29 @@ export async function readImportFiles(
       result.drafts.push(...document.drafts);
       result.sources.push(...document.sources);
       result.warnings.push(...document.warnings);
+      result.documents ??= [];
+      result.documents.push(...(document.documents ?? []));
     }
     checkAborted(options.signal);
-    if (!result.drafts.length && !result.catalog?.length) {
+    if (!result.drafts.length && !result.catalog?.length && !result.documents?.length) {
       throw new Error('没有识别到课程，请换一张更清晰的课表图片或上传 Excel / CSV 文件。');
     }
+    if (result.drafts.length) {
+      result.warnings.push(
+        ...(result.documents ?? [])
+          .filter((document) => document.kind !== 'courses')
+          .map((document) => `${document.source}：${document.message}`),
+      );
+      result.warnings = [...new Set(result.warnings)];
+    }
     report(
-      result.drafts.length ? '识别完成，正在自动导入。' : '课程目录识别完成，请补选课表图片。',
+      result.drafts.length
+        ? tableImportOnly
+          ? '读取完成，正在导入。'
+          : '识别完成，正在自动导入。'
+        : result.catalog?.length
+          ? '课程目录识别完成，请补选课表图片。'
+          : '文件检查完成。',
       0.97,
     );
     return result;
@@ -129,6 +160,9 @@ async function readDocument(file: File, options: ReadOptions): Promise<ImportRes
       break;
     }
     case 'pdf': {
+      if (typeof __LUDIAN_TABLE_IMPORT_ONLY__ !== 'undefined' && __LUDIAN_TABLE_IMPORT_ONLY__)
+        throw new Error('手机课程导入仅支持 Excel / CSV。');
+      if (tableImportOnly) throw new Error('手机课程导入仅支持 Excel / CSV。');
       const { readPdf } = await import('./readPdf');
       result = await readPdf(file, options);
       break;
@@ -138,7 +172,7 @@ async function readDocument(file: File, options: ReadOptions): Promise<ImportRes
     }
   }
   checkAborted(options.signal);
-  if (!result.drafts.length) {
+  if (!result.drafts.length && !result.documents?.length) {
     throw new Error('没有识别到课程，请换一张更清晰的课表图片或上传 Excel / CSV 文件。');
   }
   return result;

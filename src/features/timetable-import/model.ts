@@ -33,6 +33,12 @@ export type CourseDraft = {
 export type ImportMode = 'append' | 'replace';
 export type DraftIssue = { draftId: string; message: string };
 export type ImportSource = { index: number; label: string };
+export type ImportDocumentDiagnostic = {
+  source: string;
+  kind: 'courses' | 'student-list' | 'course-catalog' | 'empty' | 'unrelated' | 'missing-fields';
+  message: string;
+  missingFields?: string[];
+};
 export type ImportProgress = { stage: string; progress: number };
 export type ReadOptions = {
   signal?: AbortSignal;
@@ -45,6 +51,7 @@ export type ImportResult = {
   sources: ImportSource[];
   warnings: string[];
   catalog?: CourseCatalogEntry[];
+  documents?: ImportDocumentDiagnostic[];
 };
 
 export function createEmptyDraft(source = '手动补充'): CourseDraft {

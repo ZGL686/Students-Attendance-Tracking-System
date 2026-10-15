@@ -42,7 +42,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/src/features/timetable-import/readImages.ts*', (route) =>
     route.fulfill({ contentType: 'text/javascript', body: reader }),
   );
-  await page.goto('/phone-preview.html');
+  await page.goto('/');
   await expect(page.getByRole('heading', { name: '课程表', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '导入课程', exact: true }).click();
 });
@@ -50,7 +50,7 @@ test.beforeEach(async ({ page }) => {
 async function snapshot(page: Page) {
   return page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('ludian-phone-simulator', 1);
+      const request = indexedDB.open('guilu-attendance', 1);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -213,7 +213,7 @@ test('recognition completion followed by storage abort never reports imported su
       key?: IDBValidKey,
     ) {
       const request = add.call(this, value, key);
-      if (this.name === 'snapshots' && this.transaction.db.name === 'ludian-phone-simulator')
+      if (this.name === 'snapshots' && this.transaction.db.name === 'guilu-attendance')
         this.transaction.abort();
       return request;
     };

@@ -1,6 +1,7 @@
 import { createEmptyDraft, parseImportDay, parseImportWeeks } from './model';
 import type { CourseDraft } from './model';
 import { formatWeeks } from '../../model';
+import { hasSchedulingFields, tableHeaders } from './table-fields';
 
 export type GridCell = {
   row: number;
@@ -73,7 +74,7 @@ export function parsePeriodLabel(text: string): { start: number; end: number } |
   return continuousSpan(spans);
 }
 
-function dayInHeader(text: string): number | undefined {
+export function dayInHeader(text: string): number | undefined {
   const first = text
     .trim()
     .split(/[\n(（]/)[0]
@@ -130,35 +131,13 @@ export function draftFromText(text: string, source: string): CourseDraft {
   return draft;
 }
 
-const aliases: Record<string, string[]> = {
-  name: ['课程名称', '课程名', '课程', '科目', 'name', 'course'],
-  teacher: ['任课教师', '教师', '老师', 'teacher'],
-  room: ['教室', '上课地点', '地点', 'room', 'location'],
-  day: ['星期', '上课星期', '星期几', '周几', 'day', 'weekday'],
-  start: ['开始节次', '起始节次', '开始节', 'start'],
-  end: ['结束节次', '结束节', 'end'],
-  periods: ['节次', '上课节次', '时间节次', 'periods'],
-  weeks: ['上课周次', '教学周', '周次', '周数', 'weeks'],
-};
-
 function parseList(cells: GridCell[], source: string): CourseDraft[] | undefined {
   const rows = [...new Set(cells.map((cell) => cell.row))].sort((a, b) => a - b);
-  let headerRow = -1;
-  let columns: Record<string, number> = {};
-  for (const row of rows.slice(0, 30)) {
-    const found: Record<string, number> = {};
-    for (const cell of cells.filter((item) => item.row === row)) {
-      const label = cell.text.trim().replace(/\s+/g, '').toLowerCase();
-      for (const [field, values] of Object.entries(aliases))
-        if (values.includes(label)) found[field] = cell.column;
-    }
-    if ('name' in found && ('day' in found || 'weeks' in found || 'periods' in found)) {
-      headerRow = row;
-      columns = found;
-      break;
-    }
-  }
-  if (headerRow < 0) return undefined;
+  const header = tableHeaders(cells).find(
+    ({ columns }) => 'name' in columns && hasSchedulingFields(columns),
+  );
+  if (!header) return undefined;
+  const { row: headerRow, columns } = header;
   const values = new Map<number, Record<string, string>>();
   const rowText = new Map<number, string[]>();
   const fieldsByColumn = new Map(Object.entries(columns).map(([field, column]) => [column, field]));

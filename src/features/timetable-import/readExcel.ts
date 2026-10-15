@@ -1,9 +1,9 @@
 import type { Workbook, Worksheet } from 'exceljs';
 import { parseCsv } from '../../files';
 import { checkAborted } from './model';
-import type { CourseDraft, ImportSource, ReadOptions } from './model';
-import { parseGrid } from './parse';
+import type { CourseDraft, ImportDocumentDiagnostic, ImportSource, ReadOptions } from './model';
 import type { GridCell } from './parse';
+import { readCourseTable } from './table-diagnostics';
 
 async function loadWorkbook(file: File, signal?: AbortSignal): Promise<Workbook> {
   checkAborted(signal);
@@ -11,7 +11,12 @@ async function loadWorkbook(file: File, signal?: AbortSignal): Promise<Workbook>
   const bytes = await file.arrayBuffer();
   checkAborted(signal);
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(bytes);
+  try {
+    await workbook.xlsx.load(bytes);
+  } catch {
+    checkAborted(signal);
+    throw new Error('无法读取 Excel 文件，请确认文件未损坏，并在 Excel 中另存为 .xlsx 后重试。');
+  }
   checkAborted(signal);
   return workbook;
 }
@@ -64,7 +69,11 @@ export async function inspectExcel(file: File, signal?: AbortSignal): Promise<Im
 export async function readExcel(
   file: File,
   options: ReadOptions,
-): Promise<{ drafts: CourseDraft[]; sources: ImportSource[] }> {
+): Promise<{
+  drafts: CourseDraft[];
+  sources: ImportSource[];
+  documents: ImportDocumentDiagnostic[];
+}> {
   const { signal, onProgress, selection } = options;
   onProgress?.({ stage: '正在读取 Excel 表格…', progress: 0.1 });
   checkAborted(signal);
@@ -74,22 +83,28 @@ export async function readExcel(
     if (rows.length > 5000 || rows.some((row) => row.length > 150))
       throw new Error('课表范围过大，请只保留课表区域。');
     const cells = rows.flatMap((row, r) => row.map((text, c) => ({ row: r, column: c, text })));
+    const table =
+      selection && !selection.includes(0) ? undefined : readCourseTable(cells, file.name);
     return {
-      drafts: selection && !selection.includes(0) ? [] : parseGrid(cells, file.name),
+      drafts: table?.drafts ?? [],
       sources: [{ index: 0, label: 'CSV 表格' }],
+      documents: table ? [table.document] : [],
     };
   }
   const workbook = await loadWorkbook(file, signal);
   const sources = workbook.worksheets.map((sheet, index) => ({ index, label: sheet.name }));
   const drafts: CourseDraft[] = [];
+  const documents: ImportDocumentDiagnostic[] = [];
   workbook.worksheets.forEach((sheet, index) => {
     checkAborted(signal);
     if (selection && !selection.includes(index)) return;
-    drafts.push(...parseGrid(worksheetCells(sheet), `${file.name} · ${sheet.name}`));
+    const table = readCourseTable(worksheetCells(sheet), `${file.name} · ${sheet.name}`);
+    drafts.push(...table.drafts);
+    documents.push(table.document);
     onProgress?.({
       stage: `已读取工作表“${sheet.name}”`,
       progress: (index + 1) / workbook.worksheets.length,
     });
   });
-  return { drafts, sources };
+  return { drafts, sources, documents };
 }

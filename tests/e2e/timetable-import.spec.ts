@@ -74,14 +74,17 @@ test('selecting a complete file automatically appends and persists without confi
   );
 });
 
-test('incomplete imports preserve the timetable and offer direct manual entry', async ({
+test('incomplete imports show the reason first and keep manual entry collapsed', async ({
   page,
 }) => {
   const before = await snapshot(page);
   const dialog = await uploadCsv(page, '星际绘画,虚构教师,测试室,,9,10,\n');
   await expect(dialog.getByRole('region', { name: '手动补录课程', exact: true })).toBeVisible();
   await expect(dialog).toContainText('课表没有改动');
+  await expect(dialog.getByLabel('课程名称', { exact: true })).toBeHidden();
+  await expect(dialog.locator('.import-skipped')).toContainText('星期');
   expect(await snapshot(page)).toEqual(before);
+  await dialog.locator('summary').filter({ hasText: '手动补录课程' }).click();
   await dialog.getByLabel('课程名称', { exact: true }).fill('虚构手动补课');
   await dialog.locator('.quick-course-entry select').selectOption('7');
   await dialog.getByLabel('开始节次', { exact: true }).fill('9');
@@ -144,9 +147,7 @@ test('a duplicate plus blocked arrangements shows every reason without claiming 
   await expect(dialog.locator('.import-skipped')).toContainText('重叠');
   await expect(dialog.locator('.import-skipped')).toContainText('缺失周次课程');
   await expect(dialog.locator('.import-summary')).not.toContainText('已导入');
-  await expect(dialog.getByRole('region', { name: '手动补录课程', exact: true })).toContainText(
-    '本次没有新增课程',
-  );
+  await expect(dialog.getByLabel('课程名称', { exact: true })).toBeHidden();
   await expect(dialog).not.toContainText('课程已保存');
   expect(await snapshot(page)).toEqual(before);
 });
@@ -289,6 +290,6 @@ test('unsupported legacy Excel explains conversion and leaves the timetable unto
     mimeType: 'application/vnd.ms-excel',
     buffer: Buffer.from('legacy'),
   });
-  await expect(dialog.getByRole('alert')).toContainText('另存为 .xlsx');
+  await expect(dialog.getByRole('alert')).toContainText(/另存为.*\.xlsx/);
   expect(await snapshot(page)).toEqual(before);
 });

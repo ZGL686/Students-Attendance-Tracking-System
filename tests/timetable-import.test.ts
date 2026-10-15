@@ -286,10 +286,13 @@ describe('spreadsheet and OCR parsing with fictional classes', () => {
     expect(result.drafts[0].name).toBe('测试二班课程');
   });
 
-  it('reports unsupported files and rejects an empty result without inventing a course', async () => {
+  it('reports unsupported files and explains unrelated content without inventing a course', async () => {
     await expect(readImportFile(new File(['data'], '课表.xls'))).rejects.toThrow('.xlsx');
-    await expect(readImportFile(new File(['无课表内容'], '课表.csv'))).rejects.toThrow(
-      '没有识别到课程',
-    );
+    const unrelated = await readImportFile(new File(['无课表内容'], '课表.csv'));
+    expect(unrelated.drafts).toEqual([]);
+    expect(unrelated.documents?.[0]).toMatchObject({
+      kind: 'unrelated',
+      message: expect.stringContaining('没有找到课程信息'),
+    });
   });
 });

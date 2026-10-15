@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
 import type { Frame, Page } from '@playwright/test';
+import ExcelJS from 'exceljs';
 import type { AppData } from '../../src/model';
-import { coloredTimetableFixtures, fictionalCards } from './timetable-colored-fixture';
+import { fictionalCards } from './timetable-colored-fixture';
 
 const phoneSelector = 'iframe[title="Ludian 手机预览"]';
+const header = ['课程名称', '任课教师', '教室', '星期', '开始节次', '结束节次', '上课周次'];
 
 async function phoneFrame(page: Page): Promise<Frame> {
   await expect(page.frameLocator(phoneSelector).locator('.app-shell')).toHaveAttribute(
@@ -26,30 +28,19 @@ async function snapshot(frame: Frame): Promise<{ data: AppData; revision: number
   });
 }
 
-test('400 × 866 phone simulator automatically saves both OCR images as a full-term timetable', async ({
-  page,
-  context,
-}, testInfo) => {
-  test.setTimeout(240_000);
+async function openImport(frame: Frame) {
+  await frame.getByRole('button', { name: '导入课程', exact: true }).click();
+  return frame.getByRole('dialog', { name: '导入课程', exact: true });
+}
+
+test.beforeEach(async ({ page, context }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  const remote: string[] = [];
-  await context.route('**/*', async (route) => {
-    const url = new URL(route.request().url());
-    if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') await route.continue();
-    else {
-      remote.push(url.origin);
-      await route.abort();
-    }
-  });
   await context.route('**/local-seed.json', (route) => route.fulfill({ status: 404, body: '' }));
-  // Playwright supplies a new nonpersistent context; this never opens the user's browser store.
+  // This new nonpersistent context uses only the isolated phone simulator database.
   expect(await context.storageState()).toEqual({ cookies: [], origins: [] });
   await page.goto('/phone-simulator.html');
-  let frame = await phoneFrame(page);
+  const frame = await phoneFrame(page);
   await expect(frame.getByRole('heading', { name: '课程表', exact: true })).toBeVisible();
-  const initial = await snapshot(frame);
-  expect(initial.data.workspaces[0].students).toEqual([]);
-  expect(initial.data.workspaces[0].records).toEqual([]);
   await frame.evaluate(async () => {
     const environmentPath = '/src/browserEnvironment.ts';
     const { browserDatabaseName } = await import(environmentPath);
@@ -62,55 +53,88 @@ test('400 × 866 phone simulator automatically saves both OCR images as a full-t
       throw new Error('新建隔离测试工作台不符合预期。');
     const data = structuredClone(current.data);
     const workspace = data.workspaces[0];
-    workspace.name = '虚构彩色课表验收';
+    workspace.name = '虚构文件课表验收';
     workspace.term = '虚构 18 周学期';
     workspace.totalWeeks = 18;
     workspace.courses = [];
     await save(data, current.revision);
   });
   await page.reload();
-  frame = await phoneFrame(page);
-  await expect(frame.getByRole('heading', { name: '课程表', exact: true })).toBeVisible();
+  await phoneFrame(page);
+});
+
+test('400 × 866 phone imports verified Excel fields once, reloads and skips duplicates without OCR', async ({
+  page,
+  context,
+}, testInfo) => {
+  const unwantedRequests: string[] = [];
+  await context.route('**/*', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.hostname !== '127.0.0.1' && url.hostname !== 'localhost') {
+      unwantedRequests.push(url.origin);
+      await route.abort();
+    } else if (/\/(?:offline\/|[^/]*ocr[^/]*\.|readImages?\.)/i.test(url.pathname)) {
+      unwantedRequests.push(url.pathname);
+      await route.abort();
+    } else await route.continue();
+  });
+  let frame = await phoneFrame(page);
   const before = await snapshot(frame);
-  expect(before.data.workspaces[0].courses).toEqual([]);
   expect(await frame.evaluate(() => ({ width: innerWidth, height: innerHeight }))).toEqual({
     width: 400,
     height: 866,
   });
-  const fixture = await coloredTimetableFixtures(page);
-  await frame.getByRole('button', { name: '导入课程', exact: true }).click();
-  const dialog = frame.getByRole('dialog', { name: '导入课程', exact: true });
-  const picker = dialog.getByLabel('选择课程表图片或文件', { exact: true });
+  const workbook = new ExcelJS.Workbook();
+  workbook
+    .addWorksheet('已核对课程')
+    .addRows([
+      header,
+      ...fictionalCards.map((card) => [
+        card.name,
+        '测试老师',
+        card.room,
+        card.day,
+        card.start,
+        card.end,
+        '1-18',
+      ]),
+    ]);
+  const file = {
+    name: '虚构已核对课表.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from(await workbook.xlsx.writeBuffer()),
+  };
+  let dialog = await openImport(frame);
+  const picker = dialog.getByLabel('选择课表文件', { exact: true });
   expect(await picker.evaluate((element) => (element as HTMLInputElement).multiple)).toBe(true);
-  await picker.setInputFiles([
-    {
-      name: '虚构课程目录.png',
-      mimeType: 'image/png',
-      buffer: Buffer.from(fixture.catalog, 'base64'),
-    },
-    {
-      name: '虚构彩色课表.png',
-      mimeType: 'image/png',
-      buffer: Buffer.from(fixture.timetable, 'base64'),
-    },
-  ]);
-  await expect(dialog.locator('.import-summary')).toContainText(
-    '已导入 11 门课程，跳过 0 门重复课程',
-    { timeout: 180_000 },
-  );
-  await expect(dialog).toContainText('11 门课程未标注周次，已按当前学期 1–18 周导入。');
-  await expect(dialog.locator('.import-progress')).toHaveCount(0);
-  await expect(dialog.getByRole('alert')).toHaveCount(0);
-  await expect(dialog.getByRole('button', { name: '确认导入', exact: true })).toHaveCount(0);
+  await expect(picker).toHaveAttribute('accept', /\.xlsx/);
+  await expect(picker).toHaveAttribute('accept', /\.csv/);
+  await expect(picker).not.toHaveAttribute('accept', /image|\.pdf|\.png|\.jpe?g/);
+  await expect(dialog).toContainText('支持 Excel / CSV，选择后自动追加。已有课程保留。');
+  await expect(dialog).not.toContainText(/OCR|识图|图片|目录图|第几周|置信度/);
+  await page
+    .locator(phoneSelector)
+    .screenshot({ path: testInfo.outputPath('phone-file-import.png') });
+  await picker.setInputFiles(file);
+  await expect(dialog).toHaveCount(0);
+  await expect(frame.getByRole('status')).toContainText('已导入 11 门课程');
   const saved = await snapshot(frame);
-  const current = saved.data.workspaces[0];
   expect(saved.revision).toBe(before.revision + 1);
-  expect(current.courses).toHaveLength(11);
-  expect(new Set(current.courses.map((course) => course.name)).size).toBe(9);
-  const signature = current.courses
-    .map(({ name, day, start, end, room, weeks }) => ({ name, day, start, end, room, weeks }))
-    .sort((a, b) => a.day - b.day || a.start - b.start);
-  expect(signature).toEqual(
+  expect(saved.data.workspaces[0].courses).toHaveLength(11);
+  expect(new Set(saved.data.workspaces[0].courses.map((course) => course.name)).size).toBe(9);
+  expect({ ...saved.data.workspaces[0], courses: [] }).toEqual(before.data.workspaces[0]);
+  expect(
+    saved.data.workspaces[0].courses
+      .map(({ name, day, start, end, room, weeks }) => ({
+        name,
+        day,
+        start,
+        end,
+        room,
+        weeks,
+      }))
+      .sort((a, b) => a.day - b.day || a.start - b.start),
+  ).toEqual(
     fictionalCards.map((card) => ({
       ...card,
       day: Number(card.day),
@@ -119,29 +143,91 @@ test('400 × 866 phone simulator automatically saves both OCR images as a full-t
       weeks: Array.from({ length: 18 }, (_, index) => index + 1),
     })),
   );
-  expect({ ...current, courses: [] }).toEqual(before.data.workspaces[0]);
-  expect(current.students).toEqual([]);
-  expect(current.records).toEqual([]);
-  expect(current).not.toHaveProperty('catalog');
-  await dialog.locator('.import-summary').scrollIntoViewIfNeeded();
-  await page.locator(phoneSelector).screenshot({
-    path: testInfo.outputPath('phone-400x866-import-summary.png'),
-  });
-  await dialog.getByRole('button', { name: '完成', exact: true }).click();
-  await expect(frame.locator('.phone-calendar-scroll .course-card')).toHaveCount(11);
-  await page.locator(phoneSelector).screenshot({
-    path: testInfo.outputPath('phone-400x866-imported-timetable.png'),
-  });
   await page.reload();
   frame = await phoneFrame(page);
   await expect(frame.locator('.phone-calendar-scroll .course-card')).toHaveCount(11);
   expect(await snapshot(frame)).toEqual(saved);
-  await frame
-    .getByRole('navigation', { name: '主要页面' })
-    .getByRole('button', { name: '学生数据库', exact: true })
-    .click();
-  await expect(frame.getByText('还没有导入学生名单', { exact: true })).toBeVisible();
-  await expect(frame.getByText(/示例同学/)).toHaveCount(0);
-  expect(await frame.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  expect(remote).toEqual([]);
+  dialog = await openImport(frame);
+  await dialog.getByLabel('选择课表文件', { exact: true }).setInputFiles(file);
+  await expect(dialog.locator('.import-summary')).toContainText('11 门课程已存在，没有重复添加');
+  expect(await snapshot(frame)).toEqual(saved);
+  expect(unwantedRequests).toEqual([]);
+});
+
+test('phone explains a mistaken student list, empty sheet and missing course fields without writing', async ({
+  page,
+}, testInfo) => {
+  const frame = await phoneFrame(page);
+  const before = await snapshot(frame);
+  const dialog = await openImport(frame);
+  const picker = dialog.getByLabel('选择课表文件', { exact: true });
+  const workbook = new ExcelJS.Workbook();
+  workbook.addWorksheet('学生名单').addRows([
+    ['学号', '姓名', '班级'],
+    ['T001', '虚构同学', '虚构班'],
+  ]);
+  await picker.setInputFiles({
+    name: '虚构学生名单.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from(await workbook.xlsx.writeBuffer()),
+  });
+  await expect(dialog.getByRole('status')).toContainText('学生名单');
+  await expect(dialog).toContainText('课表没有改动');
+  await expect(dialog.getByLabel('课程名称', { exact: true })).toBeHidden();
+  expect(await snapshot(frame)).toEqual(before);
+  await page
+    .locator(phoneSelector)
+    .screenshot({ path: testInfo.outputPath('phone-wrong-student-file.png') });
+  await picker.setInputFiles({
+    name: '空表.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('\n,,\n'),
+  });
+  await expect(dialog.getByRole('status')).toContainText(/空|没有内容/);
+  expect(await snapshot(frame)).toEqual(before);
+  await picker.setInputFiles({
+    name: '缺字段.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('课程名称,任课教师\n虚构课程,测试老师\n'),
+  });
+  await expect(dialog.getByRole('status')).toContainText('星期');
+  await expect(dialog.getByRole('status')).toContainText('节次');
+  await expect(dialog).not.toContainText(/OCR|清晰图片|识别失败/);
+  expect(await snapshot(frame)).toEqual(before);
+  await picker.setInputFiles({
+    name: '误选课表图片.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('unsupported image input'),
+  });
+  await expect(dialog.getByRole('alert')).toContainText('请选择 Excel');
+  await expect(dialog.locator('.import-progress')).toHaveCount(0);
+  expect(await snapshot(frame)).toEqual(before);
+});
+
+test('phone reports student CSV selected with a valid course file and saves only the course', async ({
+  page,
+}) => {
+  const frame = await phoneFrame(page);
+  const before = await snapshot(frame);
+  const dialog = await openImport(frame);
+  await dialog.getByLabel('选择课表文件', { exact: true }).setInputFiles([
+    {
+      name: '误选学生名单.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('学号,姓名\nT001,虚构学生\n'),
+    },
+    {
+      name: '虚构课表.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(`${header.join(',')}\n星际绘画,测试老师,测试室,周日,9,10,1-18\n`),
+    },
+  ]);
+  await expect(dialog.locator('.import-summary')).toContainText('已导入 1 门课程');
+  await expect(dialog).toContainText('误选学生名单.csv');
+  await expect(dialog).toContainText('学生名单');
+  const after = await snapshot(frame);
+  expect(after.revision).toBe(before.revision + 1);
+  expect(after.data.workspaces[0].courses).toHaveLength(1);
+  expect(after.data.workspaces[0].students).toEqual(before.data.workspaces[0].students);
+  expect(after.data.workspaces[0].records).toEqual(before.data.workspaces[0].records);
 });

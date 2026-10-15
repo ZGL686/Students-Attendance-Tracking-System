@@ -1,4 +1,4 @@
-# Android 离线 Worker 资源适配
+# Android 原生模板与表格导入构建
 
 此目录维护原生模板，生成目录 `src-tauri/gen/` 仍不提交 Git。
 `scripts/build-android.mjs` 会先运行 `scripts/prepare-android-native.mjs`。
@@ -6,23 +6,20 @@
 `cn.guilu.attendance`。模板准备重复执行不改写相同文件；不同内容先保留到
 `.local/android-native-backup/` 并在终端明确报告。
 
-`MainActivity` 保留边到边界面设置，在 `onWebViewCreate` 中安装 Worker 请求适配，
-销毁前按唯一 owner token 清理。客户端只捕获 WebView 标识和布尔配置，
-不持有 Activity / WebView；锁同时保护请求和销毁。支持条件是
-`SERVICE_WORKER_BASIC_USAGE` 与 `SERVICE_WORKER_SHOULD_INTERCEPT_REQUEST`。
-适配只允许 `GET http(s)://tauri.localhost/offline/…`，拒绝端口、凭据、
-路径穿越及其他来源，复用已有 `Rust.handleRequest`，不修改 CSP 或公网权限。
+`MainActivity` 仅保留边到边界面设置。Android 课程导入使用 Excel / CSV 字段，
+不再提供图片 OCR 或 PDF 解析，也不安装旧版的 Worker 离线资源桥接。
+准备脚本只移除该桥接的三个已知生成文件，并先将其原内容保留到本地备份目录；
+不会递归删除生成目录或用户数据。
 
-这项修复覆盖 Worker 子资源与页面不同的 Android 请求入口，
-不能仅凭桌面模拟器或资源打包校验认定某次真机导入失败由此造成。
-识别位置和 SQLite 保存仍需分别验证。
+`scripts/build-android.mjs` 设置 `LUDIAN_ANDROID_BUILD=1`，跳过离线识别资源准备。
+Vite 将 `__LUDIAN_TABLE_IMPORT_ONLY__` 编译为 `true`，剪除图片 / PDF 导入分支，
+并拒绝残留 OCR / PDF 模块。复制公共资源时排除整个 `offline/`，保留主题和字体。
+网页及桌面构建仍准备并携带原有离线识别资源，不改写或删除 `public/offline/`。
 
 验证入口：
 
-- `npx vitest run tests/android-native-prepare.test.ts`：模板复制、备份、幂等性、
-  固定标识、未初始化及目录越界保护。
-- 先运行 `node scripts/prepare-android-native.mjs`，再在
-  `src-tauri/gen/android/` 执行 `gradlew.bat :app:testUniversalReleaseUnitTest`：
-  JVM 白名单测试；编译需要本地 Android / Tauri 构建环境。
-- 原生 APK 构建验证 MainActivity 与 Worker 适配的实际编译结果。
+- `npx vitest run tests/android-native-prepare.test.ts tests/android-build-assets.test.ts`：
+  模板复制、备份、幂等性、固定标识、过期 Worker 清理、目录越界保护、
+  公共资源过滤及 OCR / PDF 模块构建拦截。
+- 原生 APK 构建验证简化后的 MainActivity 与表格导入前端。
   浏览器测试无法替代 Android WebView 真机验收。

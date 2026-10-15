@@ -5,12 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const identifier = 'cn.guilu.attendance';
-const templates = [
-  ['MainActivity.kt', 'main'],
-  ['WorkerOfflineAssets.kt', 'main'],
-  ['WorkerOfflineAssetPolicy.kt', 'main'],
-  ['test/WorkerOfflineAssetPolicyTest.kt', 'test'],
-];
+const templates = ['MainActivity.kt'];
 
 function isInside(root, target) {
   const relative = path.relative(root, target);
@@ -73,23 +68,30 @@ export async function prepareAndroidNative(rootPath = projectRoot, report = cons
 
   // Preflight every source and destination before changing generated files.
   const entries = [];
-  for (const [relative, kind] of templates) {
+  for (const relative of templates) {
     const source = await safePath(root, `src-tauri/android/${relative}`);
     const bytes = await fs.readFile(source);
     if (!/^package cn\.guilu\.attendance\r?$/m.test(bytes.toString('utf8'))) {
       throw new Error(`Android template has an unexpected package: ${relative}`);
     }
-    const destination = await safePath(
-      root,
-      `${kind === 'main' ? mainRoot : testRoot}/${path.basename(relative)}`,
-    );
+    const destination = await safePath(root, `${mainRoot}/${path.basename(relative)}`);
     entries.push({ relative, bytes, destination, existing: await existingFile(destination) });
+  }
+  // Only these maintained Worker files are obsolete. Never walk or remove the generated tree.
+  const obsolete = [];
+  for (const relative of [
+    `${mainRoot}/WorkerOfflineAssets.kt`,
+    `${mainRoot}/WorkerOfflineAssetPolicy.kt`,
+    `${testRoot}/WorkerOfflineAssetPolicyTest.kt`,
+  ]) {
+    const destination = await safePath(root, relative);
+    const existing = await existingFile(destination);
+    if (existing) obsolete.push({ relative, destination, existing });
   }
 
   let changed = 0;
   const backups = [];
-  for (const entry of entries) {
-    if (entry.existing?.equals(entry.bytes)) continue;
+  const backupExisting = async (entry) => {
     if (entry.existing) {
       const hash = createHash('sha256').update(entry.existing).digest('hex');
       const backup = await safePath(
@@ -106,15 +108,27 @@ export async function prepareAndroidNative(rootPath = projectRoot, report = cons
         `Android native file differs; preserved existing contents at ${path.relative(root, backup)}`,
       );
     }
+  };
+  // Preserve every changed/obsolete file before making any generated source changes.
+  for (const entry of entries) {
+    if (!entry.existing?.equals(entry.bytes)) await backupExisting(entry);
+  }
+  for (const entry of obsolete) await backupExisting(entry);
+  for (const entry of entries) {
+    if (entry.existing?.equals(entry.bytes)) continue;
     await fs.mkdir(path.dirname(entry.destination), { recursive: true });
     await safePath(root, path.relative(root, entry.destination));
     await fs.writeFile(entry.destination, entry.bytes);
     changed += 1;
   }
+  for (const entry of obsolete) {
+    await safePath(root, path.relative(root, entry.destination));
+    await fs.unlink(entry.destination);
+  }
   report(
-    `Android native templates ready (${changed} updated, ${entries.length - changed} unchanged).`,
+    `Android native templates ready (${changed} updated, ${entries.length - changed} unchanged, ${obsolete.length} obsolete Worker files removed).`,
   );
-  return { changed, unchanged: entries.length - changed, backups };
+  return { changed, unchanged: entries.length - changed, removed: obsolete.length, backups };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

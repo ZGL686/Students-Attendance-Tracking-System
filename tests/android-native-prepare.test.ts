@@ -7,8 +7,9 @@ import { afterEach, beforeEach, expect, it } from 'vitest';
 
 const script = fileURLToPath(new URL('../scripts/prepare-android-native.mjs', import.meta.url));
 const templateRoot = fileURLToPath(new URL('../src-tauri/android/', import.meta.url));
-const nativeFiles = ['MainActivity.kt', 'WorkerOfflineAssets.kt', 'WorkerOfflineAssetPolicy.kt'];
+const nativeFiles = ['MainActivity.kt'];
 const mainRelative = 'src-tauri/gen/android/app/src/main/java/cn/guilu/attendance';
+const testRelative = 'src-tauri/gen/android/app/src/test/java/cn/guilu/attendance';
 const temporaryRoot = path.resolve(os.tmpdir());
 let root: string;
 const cleanup: string[] = [];
@@ -38,10 +39,6 @@ beforeEach(async () => {
   for (const file of nativeFiles) {
     await write(`src-tauri/android/${file}`, await fs.readFile(path.join(templateRoot, file)));
   }
-  await write(
-    'src-tauri/android/test/WorkerOfflineAssetPolicyTest.kt',
-    await fs.readFile(path.join(templateRoot, 'test/WorkerOfflineAssetPolicyTest.kt')),
-  );
 });
 
 afterEach(async () => {
@@ -58,24 +55,20 @@ afterEach(async () => {
   }
 });
 
-it('copies maintained main and JVM test templates and reports the preserved activity', async () => {
+it('copies the basic activity without an OCR Worker hook and preserves the generated activity', async () => {
   const result = run();
   expect(result.status, result.stderr).toBe(0);
-  expect(result.stdout).toContain('4 updated, 0 unchanged');
+  expect(result.stdout).toContain('1 updated, 0 unchanged, 0 obsolete');
   expect(result.stdout).toContain('preserved existing contents');
   for (const file of nativeFiles) {
     expect(await fs.readFile(path.join(root, mainRelative, file))).toEqual(
       await fs.readFile(path.join(templateRoot, file)),
     );
   }
-  expect(
-    await fs.readFile(
-      path.join(
-        root,
-        'src-tauri/gen/android/app/src/test/java/cn/guilu/attendance/WorkerOfflineAssetPolicyTest.kt',
-      ),
-    ),
-  ).toEqual(await fs.readFile(path.join(templateRoot, 'test/WorkerOfflineAssetPolicyTest.kt')));
+  const activity = await fs.readFile(path.join(root, mainRelative, 'MainActivity.kt'), 'utf8');
+  expect(activity).toContain('enableEdgeToEdge()');
+  expect(activity).not.toContain('WorkerOffline');
+  expect(activity).not.toContain('onWebViewCreate');
   const backupRoot = path.join(root, '.local/android-native-backup');
   const hashes = await fs.readdir(backupRoot);
   expect(hashes).toHaveLength(1);
@@ -91,7 +84,7 @@ it('does not rewrite matching templates or create additional backups on repeated
   await fs.utimes(activity, fixedTime, fixedTime);
   const result = run();
   expect(result.status, result.stderr).toBe(0);
-  expect(result.stdout).toContain('0 updated, 4 unchanged');
+  expect(result.stdout).toContain('0 updated, 1 unchanged, 0 obsolete');
   expect(result.stdout).not.toContain('preserved existing contents');
   expect((await fs.stat(activity)).mtimeMs).toBe(fixedTime.getTime());
   expect(await fs.readdir(path.join(root, '.local/android-native-backup'))).toHaveLength(1);
@@ -102,7 +95,7 @@ it('preserves subsequent generated edits before restoring the maintained templat
   await write(`${mainRelative}/MainActivity.kt`, '// a later local activity customization\n');
   const result = run();
   expect(result.status, result.stderr).toBe(0);
-  expect(result.stdout).toContain('1 updated, 3 unchanged');
+  expect(result.stdout).toContain('1 updated, 0 unchanged');
   const backupRoot = path.join(root, '.local/android-native-backup');
   const texts = await Promise.all(
     (await fs.readdir(backupRoot)).map((hash) =>
@@ -154,8 +147,8 @@ it('reports an uninitialized Android project instead of creating one', async () 
   await expect(fs.stat(path.join(root, '.local'))).rejects.toMatchObject({ code: 'ENOENT' });
 });
 
-it('checks all template packages before writing any generated files', async () => {
-  await write('src-tauri/android/WorkerOfflineAssetPolicy.kt', 'package another.app\n');
+it('checks the activity template package before writing generated files', async () => {
+  await write('src-tauri/android/MainActivity.kt', 'package another.app\n');
   const result = run();
   expect(result.status).not.toBe(0);
   expect(result.stderr).toContain('unexpected package');
@@ -183,9 +176,56 @@ it('refuses an Android generated directory junction outside the project', async 
   ).toBe('// existing generated activity\n');
 });
 
-it('prepares native templates before offline and frontend Android builds', async () => {
+it('backs up and removes only the three obsolete generated Worker source files', async () => {
+  const obsolete = [
+    `${mainRelative}/WorkerOfflineAssets.kt`,
+    `${mainRelative}/WorkerOfflineAssetPolicy.kt`,
+    `${testRelative}/WorkerOfflineAssetPolicyTest.kt`,
+  ];
+  for (const relative of obsolete)
+    await write(relative, `// previous ${path.basename(relative)}\n`);
+  await write(`${mainRelative}/OtherLocalFile.kt`, '// unrelated custom source\n');
+  const result = run();
+  expect(result.status, result.stderr).toBe(0);
+  expect(result.stdout).toContain('3 obsolete Worker files removed');
+  const backupRoot = path.join(root, '.local/android-native-backup');
+  const hashes = await fs.readdir(backupRoot);
+  expect(hashes).toHaveLength(4);
+  for (const relative of obsolete) {
+    await expect(fs.stat(path.join(root, relative))).rejects.toMatchObject({ code: 'ENOENT' });
+    const name = path.basename(relative);
+    const backup = await Promise.all(
+      hashes.map((hash) =>
+        fs.readFile(path.join(backupRoot, hash, name), 'utf8').catch(() => null),
+      ),
+    );
+    expect(backup).toContain(`// previous ${name}\n`);
+  }
+  expect(await fs.readFile(path.join(root, mainRelative, 'OtherLocalFile.kt'), 'utf8')).toBe(
+    '// unrelated custom source\n',
+  );
+  expect(run().stdout).toContain('0 updated, 1 unchanged, 0 obsolete');
+});
+
+it('refuses an obsolete Worker symlink before changing any generated source', async () => {
+  const otherRoot = await fresh();
+  const externalFile = path.join(otherRoot, 'WorkerOfflineAssets.kt');
+  await fs.writeFile(externalFile, '// outside source\n');
+  await fs.symlink(otherRoot, path.join(root, mainRelative, 'WorkerOfflineAssets.kt'), 'junction');
+  const result = run();
+  expect(result.status).not.toBe(0);
+  expect(result.stderr).toContain('refuses symbolic link');
+  expect(await fs.readFile(path.join(root, mainRelative, 'MainActivity.kt'), 'utf8')).toBe(
+    '// existing generated activity\n',
+  );
+  expect(await fs.readFile(externalFile, 'utf8')).toBe('// outside source\n');
+});
+
+it('prepares native templates before the frontend build and skips offline recognition resources', async () => {
   const build = await fs.readFile(new URL('../scripts/build-android.mjs', import.meta.url), 'utf8');
   expect(build.indexOf('scripts/prepare-android-native.mjs')).toBeLessThan(
-    build.indexOf('scripts/prepare-offline.mjs'),
+    build.indexOf('node_modules/typescript/bin/tsc'),
   );
+  expect(build).not.toContain('scripts/prepare-offline.mjs');
+  expect(build).toContain("LUDIAN_ANDROID_BUILD: '1'");
 });

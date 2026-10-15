@@ -61,6 +61,7 @@ test('Android layout imports the Windows backup, records attendance offline and 
   await page.getByRole('button', { name: '导入并初始化手机' }).click();
 
   await expect(page.getByRole('heading', { name: '课程表', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '每日安排', exact: true }).click();
   await expect(page.locator('.mobile-agenda-course')).toContainText('虚构移动课程');
   await page.getByRole('navigation').getByRole('button', { name: '考勤工作台' }).click();
   await expect(page.getByLabel('登记课程')).toHaveValue('mobile-course-a');

@@ -1,9 +1,15 @@
-import { Image, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, Modal } from '../../components/ui';
 import { useApp } from '../../context';
 import { commitAutomaticCourseImport } from './commit';
+import {
+  courseImportAccept,
+  courseImportHint,
+  courseImportLabel,
+  tableImportOnly,
+} from './import-policy';
 import { createEmptyDraft, parseImportWeeks, validateDrafts } from './model';
 import type { CourseCatalogEntry } from './model';
 import { readImportFiles } from './read';
@@ -22,7 +28,6 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
   const [quickEnd, setQuickEnd] = useState('2');
   const [quickWeeks, setQuickWeeks] = useState(`1-${Math.min(16, target?.totalWeeks ?? 16)}`);
   const [summary, setSummary] = useState('');
-  const [savedCourses, setSavedCourses] = useState(0);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [catalog, setCatalog] = useState<CourseCatalogEntry[]>([]);
@@ -48,7 +53,6 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
     setError('');
     setNoCourseReason('');
     setSummary('');
-    setSavedCourses(0);
     setSkipped([]);
     setWarnings([]);
     setCatalogOnly(false);
@@ -71,7 +75,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       });
       if (controller.signal.aborted) return;
       setCatalog(result.catalog ?? []);
-      if (!result.drafts.length && result.catalog?.length) {
+      if (!tableImportOnly && !result.drafts.length && result.catalog?.length) {
         setCatalogOnly(true);
         setSummary(
           `已识别 ${result.catalog.length} 条课程参考资料。目录没有星期和节次，请继续选择课表图片；这些资料会用于本次导入。`,
@@ -102,9 +106,13 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       if (!ready.courses.length && !ready.duplicates) {
         setWarnings(importWarnings);
         setNoCourseReason(
-          result.drafts.length
-            ? `识别到了 ${result.drafts.length} 条内容，但本次没有可追加的课程。请查看未导入原因；课程表没有修改，可在下面补录课程。`
-            : '没有识别到课程，课程表没有修改。你可以重新选择清晰图片或文件，也可以直接在下面补录课程。',
+          result.documents
+            ?.filter((document) => document.kind !== 'courses')
+            .map((document) => `${document.source}：${document.message}`)
+            .join('\n') ||
+            (result.drafts.length
+              ? `${result.drafts.length} 条内容未能导入，请查看下方原因。`
+              : '文件中没有可导入的课程安排，请选择包含课程名称、星期和节次的课表文件。'),
         );
         return;
       }
@@ -137,7 +145,6 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
         setError('导入未保存，请按错误提示处理后重新选择文件。');
         return;
       }
-      setSavedCourses(outcome.imported);
       const message = `已导入 ${outcome.imported} 门课程，跳过 ${outcome.duplicates} 门重复课程${outcome.skipped.length ? `，${outcome.skipped.length} 项无法导入` : ''}。`;
       setSummary(message);
       setSkipped(outcome.skipped);
@@ -150,7 +157,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
         const message = reason instanceof Error ? reason.message : String(reason);
         if (message.includes('没有识别到课程'))
           setNoCourseReason(
-            '没有识别到课程，课程表没有修改。你可以重新选择清晰图片或文件，也可以直接在下面补录课程。',
+            '文件中没有可导入的课程安排，请选择包含课程名称、星期和节次的课表文件。',
           );
         else setError(message);
       }
@@ -219,7 +226,6 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
     savingRef.current = false;
     setSaving(false);
     if (saved) {
-      setSavedCourses((count) => count + 1);
       setQuickName('');
       setSummary('课程已添加。可以继续补录下一门，或重新选择课表文件。');
       setNoCourseReason('');
@@ -234,18 +240,16 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
       onClose={close}
     >
       <div className="timetable-import">
-        <p className="inline-note">
-          可一次选择多张目录图、课表图和文件；合并识别结果后一次追加保存，重复安排自动跳过。
-        </p>
+        <p className="appearance-note">{courseImportHint}</p>
         <div className="import-picker-grid">
           <input
             ref={fileInput}
             className="import-file-input"
             type="file"
             multiple
-            accept="image/*,.xlsx,.csv,.pdf"
+            accept={courseImportAccept}
             disabled={processing || busy || unavailable}
-            aria-label="选择课程表图片或文件"
+            aria-label={courseImportLabel}
             onChange={(event) => {
               const files = Array.from(event.currentTarget.files ?? []);
               event.currentTarget.value = '';
@@ -258,15 +262,9 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
             onClick={() => fileInput.current?.click()}
           >
             <Upload size={20} />
-            选择课程表图片或文件
+            {courseImportLabel}
           </Button>
-          <small>支持多张 JPG、PNG、WebP、BMP 图片及 Excel、CSV、PDF；图片选择顺序不限。</small>
         </div>
-        <p className="appearance-note">
-          最大 20
-          MB，仅在本机处理。自动追加课程并跳过重复项；信息不完整或时间冲突的课程会列出原因，已有课表和历史考勤保留。
-          截图顶部的“第几周”仅作显示信息；课程未标注周次时按当前整个学期处理。
-        </p>
         {filename && <p className="import-source">{filename}</p>}
         {processing && (
           <div className="import-progress" role="status" aria-live="polite">
@@ -298,7 +296,7 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
             {summary}
           </p>
         )}
-        {catalogOnly && catalog.length > 0 && (
+        {!tableImportOnly && catalogOnly && catalog.length > 0 && (
           <section className="import-skipped" aria-label="已识别的课程目录">
             <h3>课程参考资料 · {catalog.length} 条</h3>
             <ul>
@@ -311,82 +309,12 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
             <p>继续点击上方按钮补选课表图片。目录资料仅在本次窗口保留，不会单独写入课表。</p>
           </section>
         )}
-        {(noCourseReason || skipped.length > 0) && (
-          <section className="quick-course-entry" aria-label="手动补录课程">
-            <div className="quick-course-copy">
-              <Image size={20} />
-              <div>
-                <h3>{noCourseReason ? '课表没有改动' : '补录未导入的课程'}</h3>
-                <p>
-                  {noCourseReason ||
-                    (savedCourses > 0
-                      ? '有效课程已保存；可在这里补录下面未导入的课程。'
-                      : '本次没有新增课程；请查看未导入原因，也可在这里补录课程。')}
-                </p>
-              </div>
-            </div>
-            <form onSubmit={(event) => void addQuickCourse(event)}>
-              <label>
-                课程名称
-                <input
-                  required
-                  maxLength={100}
-                  value={quickName}
-                  onChange={(event) => setQuickName(event.target.value)}
-                  placeholder="例如：数字媒体设计"
-                />
-              </label>
-              <div className="quick-course-fields">
-                <label>
-                  星期
-                  <select value={quickDay} onChange={(event) => setQuickDay(event.target.value)}>
-                    {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map((day, index) => (
-                      <option key={day} value={index + 1}>
-                        {day}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  开始节次
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={quickStart}
-                    onChange={(event) => setQuickStart(event.target.value)}
-                  />
-                </label>
-                <label>
-                  结束节次
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={quickEnd}
-                    onChange={(event) => setQuickEnd(event.target.value)}
-                  />
-                </label>
-                <label>
-                  上课周次
-                  <input
-                    required
-                    value={quickWeeks}
-                    onChange={(event) => setQuickWeeks(event.target.value)}
-                    placeholder={`例如 1-${Math.min(16, target?.totalWeeks ?? 16)}`}
-                  />
-                </label>
-              </div>
-              <p className="appearance-note">
-                周次默认按 1–{Math.min(16, target?.totalWeeks ?? 16)}{' '}
-                周，可按课表修改；教师和教室可之后再补充。
-              </p>
-              <div className="modal-actions">
-                <Button className="primary" pending={saving || busy}>
-                  保存这门课程
-                </Button>
-              </div>
-            </form>
+        {noCourseReason && (
+          <section className="import-summary" role="status" aria-label="本次未导入">
+            <h3>课表没有改动</h3>
+            {noCourseReason.split('\n').map((message, index) => (
+              <p key={index}>{message}</p>
+            ))}
           </section>
         )}
         {skipped.length > 0 && (
@@ -397,8 +325,74 @@ export function ImportCourses({ targetId, onClose }: { targetId: string; onClose
                 <li key={index}>{message}</li>
               ))}
             </ul>
-            <p>可重新上传信息完整的课表，系统会自动跳过已导入课程。</p>
           </div>
+        )}
+        {(noCourseReason || skipped.length > 0) && (
+          <section className="quick-course-entry" aria-label="手动补录课程">
+            <details>
+              <summary>手动补录课程</summary>
+              <form onSubmit={(event) => void addQuickCourse(event)}>
+                <label>
+                  课程名称
+                  <input
+                    required
+                    maxLength={100}
+                    value={quickName}
+                    onChange={(event) => setQuickName(event.target.value)}
+                    placeholder="例如：数字媒体设计"
+                  />
+                </label>
+                <div className="quick-course-fields">
+                  <label>
+                    星期
+                    <select value={quickDay} onChange={(event) => setQuickDay(event.target.value)}>
+                      {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map(
+                        (day, index) => (
+                          <option key={day} value={index + 1}>
+                            {day}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </label>
+                  <label>
+                    开始节次
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={quickStart}
+                      onChange={(event) => setQuickStart(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    结束节次
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={quickEnd}
+                      onChange={(event) => setQuickEnd(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    上课周次
+                    <input
+                      required
+                      value={quickWeeks}
+                      onChange={(event) => setQuickWeeks(event.target.value)}
+                      placeholder={`例如 1-${Math.min(16, target?.totalWeeks ?? 16)}`}
+                    />
+                  </label>
+                </div>
+                <div className="modal-actions">
+                  <Button className="primary" pending={saving || busy}>
+                    保存这门课程
+                  </Button>
+                </div>
+              </form>
+            </details>
+          </section>
         )}
         {(error || unavailable) && (
           <p className="form-error" role="alert">

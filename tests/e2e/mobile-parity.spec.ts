@@ -16,7 +16,7 @@ test('phone imports and edits courses, selects students for batch attendance and
   await page.getByRole('button', { name: '每日安排', exact: true }).click();
   await page.getByRole('button', { name: '导入课程', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '导入课程', exact: true });
-  await dialog.getByLabel('选择课程表图片或文件', { exact: true }).setInputFiles({
+  await dialog.getByLabel('选择课表文件', { exact: true }).setInputFiles({
     name: '虚构手机课表.csv',
     mimeType: 'text/csv',
     buffer: Buffer.from(

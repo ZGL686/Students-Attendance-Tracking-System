@@ -4,6 +4,9 @@
     "beforeBuildCommand": "npm run build:android"
   },
   "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; worker-src 'none'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost 'self' blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'"
+    },
     "windows": [
       {
         "label": "main",

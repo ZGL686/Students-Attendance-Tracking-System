@@ -3,6 +3,12 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
+// Android imports structured spreadsheets only. Keep existing desktop/dev assets intact.
+if (process.env.LUDIAN_ANDROID_BUILD === '1') {
+  console.log('Android 表格导入构建：不准备 OCR / PDF 离线资源。');
+  process.exit(0);
+}
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, 'public', 'offline');
 const packages = {
