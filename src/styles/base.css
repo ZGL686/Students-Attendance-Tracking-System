@@ -36,7 +36,6 @@ button:hover {
   background: var(--hover-soft);
 }
 button:disabled {
-  opacity: 0.45;
   cursor: not-allowed;
 }
 button.primary {
@@ -46,6 +45,14 @@ button.primary {
 }
 button.primary:hover {
   background: var(--primary-hover);
+}
+button:disabled:not(.cell-button) {
+  background: var(--disabled-surface);
+  color: var(--disabled-text);
+  border-color: var(--disabled-border);
+}
+button:disabled:not(.cell-button) * {
+  color: inherit;
 }
 button:focus-visible,
 a:focus-visible {

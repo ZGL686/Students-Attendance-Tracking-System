@@ -411,6 +411,7 @@
 
 .mobile-student-search {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   margin: 0 0 12px;
@@ -457,6 +458,6 @@
   font-size: 0.8rem;
 }
 
-.mobile-history-card.voided {
-  opacity: 0.7;
+.mobile-history-card.voided > td {
+  border-bottom-style: dashed;
 }

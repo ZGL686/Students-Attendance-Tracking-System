@@ -50,7 +50,12 @@
   --danger: #b33b32;
   --toast-bg: #37352f;
   --toast-error: #88443d;
+  --on-toast: #ffffff;
   --tooltip-bg: #37352f;
+  --on-tooltip: #ffffff;
+  --disabled-surface: #f0f1f2;
+  --disabled-text: #59616b;
+  --disabled-border: #b8bec6;
   --purple-tint: #f0e7f7;
   --purple-ink: #69479b;
   --purple-accent: #a681bc;
@@ -107,6 +112,9 @@
   --toast-bg: #41434a;
   --toast-error: #7b3732;
   --tooltip-bg: #484a50;
+  --disabled-surface: #2c3037;
+  --disabled-text: #c9d0d8;
+  --disabled-border: #68717d;
   --shadow-popover: 0 8px 30px #0005, 0 2px 5px #0003;
   --purple-tint: #3d304a;
   --purple-ink: #d0b2ec;

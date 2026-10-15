@@ -17,6 +17,7 @@ supersedes: null
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-15 | feature | - | archived | ludian-mobile-spreadsheet-import-diagnostics | [[日志/2026-10-15-Ludian手机表格导入与错文件提示.md|Ludian 手机表格导入与错文件提示]] |
 | 2026-10-15 | ui | - | archived | ludian-mobile-navigation-insets-and-artifact-cleanup | [[日志/2026-10-15-Ludian手机底部导航避让与旧产物清理.md|Ludian 手机底部导航避让与旧产物清理]] |
+| 2026-10-15 | ui | - | archived | ludian-global-text-reading-contrast | [[日志/2026-10-15-Ludian全局文字自适应对比修复.md|Ludian 全局文字自适应对比修复]] |
 | 2026-10-14 | bug | - | archived | ludian-verified-workbook-import-delivery | [[日志/2026-10-14-Ludian标准课表文件直接导入交付.md|Ludian 标准课表文件直接导入交付]] |
 | 2026-10-14 | bug | - | archived | ludian-android-image-axes-and-import-outcome | [[日志/2026-10-14-Ludian安卓图片课表定位与保存提示修复.md|Ludian 安卓图片课表定位与保存提示修复]] |
 | 2026-10-12 | feature | - | archived | ludian-browser-phone-simulator | [[日志/2026-10-12-Ludian浏览器手机模拟器与安全区验收.md|Ludian 浏览器手机模拟器与安全区验收]] |

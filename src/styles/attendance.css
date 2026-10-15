@@ -303,7 +303,12 @@
   color: var(--text-secondary);
 }
 .voided {
-  opacity: 0.55;
+  border-bottom-style: dashed;
+}
+.voided > .tag,
+.voided .mobile-history-record-cell > .tag {
+  outline: 1px dashed var(--border-strong);
+  outline-offset: 2px;
 }
 .batch-context {
   padding: 15px;

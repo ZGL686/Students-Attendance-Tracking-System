@@ -1,0 +1,56 @@
+/* Reading groups share a contrast-protected surface; decorative gaps retain the
+   selected wallpaper and glass transparency. Data surfaces in wallpaper.css
+   keep their stronger opaque rule. */
+:root[data-visual-background='true']
+  .page-content
+  > :not(:empty):not(button):not(input):not(select):not(textarea) {
+  background-color: var(--reading-surface, var(--surface-base));
+  border-radius: var(--pack-radius, 8px);
+}
+
+:root[data-visual-background='true'] :is(.sidebar, .topbar, .page-heading) {
+  background: var(--reading-surface, var(--surface-base)) !important;
+}
+
+:root[data-visual-background='true']
+  :is(.database-toolbar, .database-chips, .database-footer, .mobile-history-toolbar) {
+  background-color: var(--reading-surface, var(--surface-base));
+  padding: 10px;
+  border-radius: var(--radius);
+}
+
+:root[data-visual-background='true'] .page-content > :is(p, small, .appearance-note, .muted) {
+  padding: 8px 10px;
+  border-radius: var(--radius);
+}
+
+/* Placeholder text is information, including on an empty search field. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--subtle);
+  opacity: 1;
+}
+
+/* Inline labels and icons keep the current semantic foreground after theme
+   switches, including WebViews that inherited a text-fill color. */
+:is(button, input, select, textarea) {
+  -webkit-text-fill-color: currentColor;
+}
+
+/* A preview owns a different palette from the current page. Its local reading
+   surfaces must follow that palette rather than the page's wallpaper overlay. */
+.pack-preview .pack-preview-main {
+  background: var(--surface);
+}
+
+.pack-preview .pack-preview-sidebar {
+  background: var(--sidebar);
+}
+
+.pack-preview:not(.decorated) {
+  --blue: #075ca8;
+}
+
+.pack-preview:not(.decorated)[data-preview-mode='dark'] {
+  --blue: #82bfff;
+}

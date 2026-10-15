@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { BuiltinTheme, ThemePalette } from './schema';
+import { readablePalette } from '../../preferences/readability';
 
 const tokenMap: Record<keyof ThemePalette, string[]> = {
   surface: ['surface'],
@@ -18,7 +19,7 @@ const tokenMap: Record<keyof ThemePalette, string[]> = {
 };
 export function themeStyles(theme: BuiltinTheme, dark: boolean): CSSProperties {
   const definition = theme.definition;
-  const palette = dark ? definition.dark : definition.light;
+  const palette = readablePalette(dark ? definition.dark : definition.light);
   const style: Record<string, string> = {};
   for (const key of Object.keys(tokenMap) as (keyof ThemePalette)[])
     for (const token of tokenMap[key]) style[`--${token}`] = palette[key];

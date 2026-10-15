@@ -63,7 +63,8 @@ button > svg,
   border-color: var(--border-strong);
 }
 .database-card.dragging {
-  opacity: 0.45;
+  border-style: dashed;
+  box-shadow: 0 0 0 2px var(--blue);
 }
 .board-column {
   transition:
@@ -123,7 +124,7 @@ button > svg,
   pointer-events: none;
   transform: translateX(-50%);
   background: var(--tooltip-bg);
-  color: var(--on-accent);
+  color: var(--on-tooltip);
   font-size: 0.8571rem;
   padding: 5px 9px;
   border-radius: 5px;

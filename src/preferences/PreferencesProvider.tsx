@@ -13,11 +13,35 @@ import {
 import { findBuiltinTheme } from '../features/themes/builtins';
 import { applyThemePack } from '../features/themes/runtime';
 import { browserPreferenceKey } from '../browserEnvironment';
+import { deriveReadingAppearance, readingTextTokens } from './readability';
+import type { ReadingColors } from './readability';
+
+const readingBackgroundTokens = [
+  'surface',
+  'surface-soft',
+  'surface-today',
+  'sidebar',
+  'selected',
+  'selected-soft',
+  'selected-neutral',
+  'hover',
+  'hover-soft',
+  'pressed',
+  ...['purple', 'blue', 'pink', 'green', 'amber', 'teal'].map((color) => `${color}-tint`),
+];
+const derivedReadingTokens = [
+  ...readingTextTokens,
+  ...readingBackgroundTokens,
+  'reading-surface',
+  'primary-hover',
+  'primary-pressed',
+  'on-blue',
+  'on-accent',
+];
 
 function apply(p: Preferences) {
   const root = document.documentElement;
-  for (const property of ['--surface', '--surface-soft', '--surface-today', '--sidebar'])
-    root.style.removeProperty(property);
+  for (const property of derivedReadingTokens) root.style.removeProperty(`--${property}`);
   root.dataset.font = p.font;
   root.dataset.motion = p.motion;
   root.dataset.theme =
@@ -41,6 +65,41 @@ function apply(p: Preferences) {
   }
   const hasWallpaper = !!background;
   const transparency = hasWallpaper ? (p.glassTransparency ?? defaultGlassTransparency) : 0;
+  const color = (token: string) => palette.getPropertyValue(`--${token}`).trim();
+  const appearance = deriveReadingAppearance({
+    surface: color('surface-base'),
+    surfaces: readingBackgroundTokens.filter((token) => !token.endsWith('-tint')).map(color),
+    colors: Object.fromEntries(
+      readingTextTokens.map((token) => [token, color(token)]),
+    ) as ReadingColors,
+    inkSurfaces: Object.fromEntries(
+      ['purple', 'blue', 'pink', 'green', 'amber', 'teal'].map((hue) => [
+        `${hue}-ink`,
+        color(`${hue}-tint`),
+      ]),
+    ),
+    action: {
+      hover: color('primary-hover'),
+      pressed: color('primary-pressed'),
+      onBlue: color('on-blue'),
+      onAccent: color('on-accent'),
+    },
+    hasWallpaper,
+    transparency,
+  });
+  for (const [token, value] of Object.entries(appearance.colors))
+    root.style.setProperty(`--${token}`, value);
+  root.style.setProperty('--reading-surface', appearance.readingSurface);
+  root.style.setProperty('--on-blue', appearance.action.onBlue);
+  root.style.setProperty('--on-accent', appearance.action.onAccent);
+  root.style.setProperty('--primary-hover', appearance.action.hover);
+  root.style.setProperty('--primary-pressed', appearance.action.pressed);
+  if (appearance.forceSolid) {
+    const solid = color('surface-base');
+    for (const token of readingBackgroundTokens) root.style.setProperty(`--${token}`, solid);
+    for (const token of ['surface-soft-base', 'surface-today-base', 'sidebar-base'])
+      root.style.setProperty(`--${token}`, solid);
+  }
   const surfaceColor = (base: string) =>
     hasWallpaper
       ? `color-mix(in srgb, var(${base}) ${100 - transparency}%, transparent)`

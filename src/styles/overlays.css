@@ -83,7 +83,7 @@ label small {
   max-width: 80vw;
   z-index: 10000;
   background: var(--toast-bg);
-  color: var(--on-accent);
+  color: var(--on-toast);
   border-radius: 5px;
   box-shadow: 0 4px 15px #0002;
   padding: 11px 14px;
@@ -101,6 +101,12 @@ label small {
   min-height: 24px;
   font-size: 1.4286rem;
   padding: 0 3px;
+}
+.toast > button:not(:disabled):is(:hover, :active) {
+  background: transparent;
+  color: inherit;
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
 }
 .empty {
   padding: 48px 20px;
