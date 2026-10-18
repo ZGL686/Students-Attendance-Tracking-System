@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-10-15
+updated: 2026-10-18
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-18 | maintenance | 获取 GitHub 各分支的最新提交，将尚未进入主分支的内容合并到 `main` 并推送。 | archived | ludian-remote-branches-merge-main-20261018 | [[日志/2026-10-18-Ludian远程分支合并主线.md|Ludian 远程分支合并主线]] |
 | 2026-10-15 | feature | - | archived | ludian-mobile-spreadsheet-import-diagnostics | [[日志/2026-10-15-Ludian手机表格导入与错文件提示.md|Ludian 手机表格导入与错文件提示]] |
 | 2026-10-15 | ui | - | archived | ludian-mobile-navigation-insets-and-artifact-cleanup | [[日志/2026-10-15-Ludian手机底部导航避让与旧产物清理.md|Ludian 手机底部导航避让与旧产物清理]] |
 | 2026-10-15 | ui | - | archived | ludian-global-text-reading-contrast | [[日志/2026-10-15-Ludian全局文字自适应对比修复.md|Ludian 全局文字自适应对比修复]] |
@@ -30,6 +31,7 @@ supersedes: null
 | 2026-10-12 | maintenance | - | archived | ludian-0-5-7-android-apk-release | [[日志/2026-10-12-Ludian-0.5.7安卓批量识别安装包发布.md|Ludian 0.5.7 安卓批量识别安装包发布]] |
 | 2026-10-11 | maintenance | - | archived | ludian-0-5-6-source-clone-local-build | [[日志/2026-10-11-Ludian-0.5.6源码克隆与本地安装包.md|Ludian 0.5.6 源码克隆与本地安装包]] |
 | 2026-10-09 | feature | 让手机底部导航避开系统功能区并清晰可读；让图片与文件课表统一按星期列、节次行、课程格自动导入。 | archived | ludian-mobile-nav-and-timetable-grid-import | [[日志/2026-10-09-Ludian手机导航可读性与课表网格识别.md|2026-10-09｜Ludian 手机导航可读性与课表网格识别]] |
+| 2026-10-08 | maintenance | 从 GitHub 最新的 0.5.5 发布分支构建 Windows EXE/ZIP 与 Android 通用 APK，并更新本机 `dist/`。 | archived | ludian-0-5-5-local-installers | [[日志/2026-10-08-Ludian-0.5.5本地安装包构建.md|2026-10-08｜Ludian 0.5.5 本地安装包构建]] |
 | 2026-10-07 | maintenance | 为当前最新 Android 发布代码构建签名通用 APK。 | archived | ludian-0-5-5-android-apk-release | [[日志/2026-10-07-Ludian-0.5.5-Android-APK构建.md|Ludian 0.5.5 Android APK 构建]] |
 | 2026-10-03 | feature | 简化移动端课表选择；修复识别失败时只有报错、没有可继续操作的问题；让考勤等文字记录在自定义壁纸下保持清晰。 | archived | ludian-simple-course-import-and-opaque-records | [[日志/2026-10-03-Ludian课表导入兜底与记录不透明.md|Ludian 课表导入兜底与记录不透明]] |
 | 2026-10-03 | feature | 按用户提供的改进说明优化手机课表、课程导入、考勤记录显示，并增加自定义壁纸与玻璃透明度。 | archived | ludian-mobile-timetable-import-wallpaper | [[日志/2026-10-03-Ludian手机课表导入与壁纸改进.md|2026-10-03｜Ludian 手机课表、导入与壁纸改进]] |
