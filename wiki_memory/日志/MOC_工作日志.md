@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-10-18
+updated: 2026-10-19
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-19 | maintenance | 整理可二次修改的作品材料，覆盖明确目标用户、功能模块、业务流程、运行版本、系统说明、功能演示、界面截图、技术架构和测试说明。 | archived | ludian-editable-wps-project-submission | [[日志/2026-10-19-Ludian作品说明与可编辑WPS交付.md|Ludian 作品说明与可编辑 WPS 交付]] |
 | 2026-10-18 | maintenance | 获取 GitHub 各分支的最新提交，将尚未进入主分支的内容合并到 `main` 并推送。 | archived | ludian-remote-branches-merge-main-20261018 | [[日志/2026-10-18-Ludian远程分支合并主线.md|Ludian 远程分支合并主线]] |
 | 2026-10-15 | feature | - | archived | ludian-mobile-spreadsheet-import-diagnostics | [[日志/2026-10-15-Ludian手机表格导入与错文件提示.md|Ludian 手机表格导入与错文件提示]] |
 | 2026-10-15 | ui | - | archived | ludian-mobile-navigation-insets-and-artifact-cleanup | [[日志/2026-10-15-Ludian手机底部导航避让与旧产物清理.md|Ludian 手机底部导航避让与旧产物清理]] |
