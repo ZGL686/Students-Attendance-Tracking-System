@@ -23,6 +23,7 @@
   --pressed: #e6e5e1;
   --focus-ring: #2383e245;
   --radius: 6px;
+  --reading-panel-padding: 20px;
   --motion-fast: 120ms;
   --motion-normal: 180ms;
   --motion-slow: 220ms;

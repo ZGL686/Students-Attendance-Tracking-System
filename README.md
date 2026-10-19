@@ -2,13 +2,13 @@
 
 面向 Windows 桌面与 Android 手机的本地班级考勤应用。使用 React、TypeScript、Vite 和 Tauri 2，提供周课表、异常考勤登记、多工作台、学期汇总与备份迁移。
 
-当前源码、Android APK 与 Windows EXE / ZIP 本轮统一更新为 **0.5.11**：全应用文字按主题配色自动调整前景对比，说明和工具条等阅读区域在壁纸上获得受保护的底板。阅读卡片统一圆角、留白与文字层级，搜索图标和输入内容内联排列。保留壁纸、玻璃透明度、明暗、字体和字号偏好，无需新增设置。手机底部五项导航继续避开系统按钮及手势区；Excel / CSV 选择后自动追加保存，误选文件直接说明原因，手机不包含 OCR / PDF 导入资源。桌面继续支持图片与 PDF。保留 18 套离线主题、学生与课程编辑、批量考勤、汇总和备份迁移，不需要登录或云端连接。
+当前源码、Android APK 与 Windows EXE / ZIP 统一更新为 **0.5.12**。本版补齐各页面阅读卡片、工具区和说明文字的内边距，手机备份操作改为单栏，避免文字贴边及按钮拥挤。保留主题、玻璃透明度、明暗、字体和字号偏好；底部导航继续避开系统区域。手机 Excel / CSV 选择后自动追加保存，桌面继续支持图片与 PDF，本地数据和历史考勤保留。实际版本及 SHA-256 见发行目录中的版本文件。
 
 保留表格、看板、画廊、列表、日历、保存视图、自定义属性、筛选排序、批量编辑和关联汇总。更名不会改变原数据目录、备份格式或已有记录。
 
 ## 使用
 
-Windows **0.5.11** 发行包可直接打开 `dist/Ludian-latest/Ludian.exe`，或将 `dist/Ludian-latest.zip` 解压后运行。运行环境为 Windows 10/11 x64，需要 Microsoft Edge WebView2 Runtime；实际产物版本及 SHA-256 以 `dist/Ludian-latest/version.json` 为准。
+Windows **0.5.12** 发行包可直接打开 `dist/Ludian-latest/Ludian.exe`，或将 `dist/Ludian-latest.zip` 解压后运行。运行环境为 Windows 10/11 x64，需要 Microsoft Edge WebView2 Runtime；实际产物版本及 SHA-256 以 `dist/Ludian-latest/version.json` 为准。
 
 - 课程表按北京时间显示当前周，支持周次切换、课程详情、添加和编辑课程；每天最多 10 节、学期最多 30 周，支持不连续周和单双周。
 - 手机和手机模拟器的“导入课程”接受 `.xlsx`、UTF-8 `.csv`，可一次选择多份文件。Excel 默认处理全部工作表；列表包含课程名称、星期、节次和周次，网格按顶部星期与左侧节次读取合并课程格。整批读取完成后，有效安排通过一次事务追加保存；重复、缺失或冲突项显示原因，已有课表、学生及历史考勤保留。
@@ -23,7 +23,7 @@ Windows **0.5.11** 发行包可直接打开 `dist/Ludian-latest/Ludian.exe`，�
 - 在“学期设置”中随时修改开学日期、作息、总周数、备忘与新增考勤类型。
 - 在“数据与备份”中导出完整 JSON；恢复先校验 SHA-256 和数据结构，再创建独立副本，保留已有工作台。
 
-Android **0.5.11** 面向 Android 7.0 及以上 ARM64 / ARMv7 手机，安装入口为 `dist/Ludian-Android-universal.apk`，实际产物版本及 SHA-256 以 `dist/android-version.json` 为准。更新前先导出完整 JSON 备份至应用外；已安装同签名 **0.5.3–0.5.10** 时可直接覆盖安装，保留原本地数据，不要先卸载。课程导入仅接受 Excel / CSV；实体手机覆盖安装、文字显示、底部导航和重启保存仍待验收。底部为课表、考勤、学生、记录、备份，右上角“全部功能”可进入汇总、设置和工作台管理。手机与 Windows 通过手动 JSON 备份迁移，不提供云同步。构建与签名见 [Android APK 构建说明](docs/Android%20APK%20构建.md)。
+Android **0.5.12** 面向 Android 7.0 及以上 ARM64 / ARMv7 手机，安装入口为 `dist/Ludian-Android-universal.apk`，实际产物版本及 SHA-256 以 `dist/android-version.json` 为准。更新前先导出完整 JSON 备份至应用外；已安装同签名 **0.5.3–0.5.11** 时可直接覆盖安装，保留原本地数据，不要先卸载。课程导入仅接受 Excel / CSV；实体手机覆盖安装、文字显示、底部导航和重启保存仍待验收。底部为课表、考勤、学生、记录、备份，右上角“全部功能”可进入汇总、设置和工作台管理。手机与 Windows 通过手动 JSON 备份迁移，不提供云同步。构建与签名见 [Android APK 构建说明](docs/Android%20APK%20构建.md)。
 
 完整操作说明见 [使用说明](docs/使用说明.md)。
 

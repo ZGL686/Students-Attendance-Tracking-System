@@ -1,6 +1,6 @@
 # Ludian Android APK 内测构建
 
-Ludian 0.5.10 使用 Tauri 2 打包 Android 应用，最低支持 Android 7.0（SDK 24）。APK 包含 ARM64 和 ARMv7 两种手机架构，不连接云端；本机数据保存在应用私有目录，手机和 Windows 通过手动传递 JSON 备份迁移。手机课程导入仅接受 Excel / CSV，按字段或网格结构读取，APK 不包含 OCR / PDF 引擎及语言资源。本轮调整底部导航图标与文字的位置，结合系统安全区域避让三按钮和手势区。
+Ludian 0.5.12 使用 Tauri 2 打包 Android 应用，最低支持 Android 7.0（SDK 24）。APK 包含 ARM64 和 ARMv7 两种手机架构，不连接云端；本机数据保存在应用私有目录，手机和 Windows 通过手动传递 JSON 备份迁移。手机课程导入仅接受 Excel / CSV，APK 不包含 OCR / PDF 引擎及语言资源。本版补齐全应用阅读区域的内边距，手机备份操作改为单栏；原有系统安全区避让继续保留。
 
 ## 首次准备
 

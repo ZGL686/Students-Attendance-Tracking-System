@@ -1,5 +1,6 @@
 /* Phone interaction layout, shared by Android and narrow browser previews. */
 body[data-mobile='true'] {
+  --reading-panel-padding: 16px;
   overflow-x: hidden;
 }
 body[data-mobile='true'] button,
@@ -388,7 +389,21 @@ body[data-mobile='true'] .sort-rule {
   flex-wrap: wrap;
 }
 body[data-mobile='true'] .backup-banner {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+body[data-mobile='true'] .backup-banner > div {
+  min-width: 0;
+}
+body[data-mobile='true'] .backup-banner > .tag {
+  grid-column: 2;
+  justify-self: start;
+}
+body[data-mobile='true'] .backup-actions {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
 }
 body[data-mobile='true'] .backup-banner > button {
   width: 100%;

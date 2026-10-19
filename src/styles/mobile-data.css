@@ -27,7 +27,8 @@
   font-weight: 600;
 }
 .phone-database-select-all {
-  margin: 10px 0 0;
+  margin: 0;
+  padding: 10px 12px;
 }
 .phone-database-row {
   min-width: 0;
@@ -123,6 +124,17 @@ body[data-mobile='true'] .database-list-row {
   gap: 6px;
   text-align: left;
   white-space: normal;
+  padding-inline: 12px;
+}
+body[data-mobile='true'] .database-body .group-heading {
+  padding: 8px 12px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  white-space: normal;
+}
+body[data-mobile='true'] .database-calendar-toolbar {
+  padding-inline: 12px;
+  flex-wrap: wrap;
 }
 body[data-mobile='true'] .database-list-row > strong {
   min-width: 0;

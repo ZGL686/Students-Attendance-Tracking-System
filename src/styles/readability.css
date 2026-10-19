@@ -3,13 +3,88 @@
    keep their stronger opaque rule. */
 :root[data-visual-background='true']
   .page-content
-  > :not(:empty):not(button):not(input):not(select):not(textarea) {
+  > :where(:not(:empty):not(button):not(input):not(select):not(textarea)) {
   background-color: var(--reading-surface, var(--surface-base));
   border-radius: var(--pack-radius, 8px);
 }
 
 :root[data-visual-background='true'] :is(.sidebar, .topbar, .page-heading) {
   background: var(--reading-surface, var(--surface-base)) !important;
+}
+
+/* Only unpadded reading groups need an inset. Tables, data cards and overlays
+   retain the spacing owned by their components. */
+:root[data-visual-background='true'] .page-heading,
+:root[data-visual-background='true']
+  .page-content
+  > :is(
+    .settings-tabs,
+    [role='tabpanel'],
+    .overview-strip,
+    .table-toolbar,
+    .table-footer,
+    .report-filters,
+    .report-table-heading,
+    .report-note
+  ) {
+  min-width: 0;
+  padding: var(--reading-panel-padding);
+}
+
+:root[data-visual-background='true'] .page-content > .backup-actions,
+:root[data-visual-background='true'] .page-content > .report-cards {
+  background: transparent;
+  border-radius: 0;
+}
+
+:root[data-visual-background='true'] .report-cards {
+  gap: 12px;
+  border-bottom: 0;
+}
+
+:root[data-visual-background='true'] .report-card {
+  padding: var(--reading-panel-padding);
+}
+
+:root[data-visual-background='true'] .schedule-section > .section-toolbar,
+:root[data-visual-background='true'] .phone-agenda-heading {
+  padding: 12px var(--reading-panel-padding);
+}
+
+:root[data-visual-background='true'] .daily-panel {
+  padding: var(--reading-panel-padding);
+}
+
+:root[data-visual-background='true'] .schedule-section > .calendar-footer {
+  padding: 10px var(--reading-panel-padding) 12px;
+}
+
+.page-heading > div,
+.settings-section > div,
+.appearance-heading > div,
+.appearance-inline > div {
+  min-width: 0;
+}
+
+.report-table-heading {
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.report-table-heading > h3 {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.report-table-heading svg {
+  flex-shrink: 0;
+}
+
+.report-table-heading > span,
+.snapshot-list > div > span,
+.backup-actions p {
+  overflow-wrap: anywhere;
 }
 
 :root[data-visual-background='true']
@@ -20,7 +95,7 @@
 }
 
 :root[data-visual-background='true'] .page-content > :is(p, small, .appearance-note, .muted) {
-  padding: 8px 10px;
+  padding: 12px var(--reading-panel-padding);
   border-radius: var(--radius);
 }
 
