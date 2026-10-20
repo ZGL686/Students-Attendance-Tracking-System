@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-20 | maintenance | - | archived | competition-mobile-poster | [[日志/2026-10-20-Ludian简约教育风参赛海报.md|Ludian 简约教育风参赛海报]] |
 | 2026-10-20 | maintenance | - | archived | competition-presentation-redesign | [[日志/2026-10-20-Ludian竞赛答辩目录与视觉重排.md|Ludian 竞赛答辩目录与视觉重排]] |
 | 2026-10-20 | maintenance | - | archived | ludian-mobile-competition-presentation | [[日志/2026-10-20-Ludian移动应用竞赛答辩PPT交付.md|Ludian 移动应用竞赛答辩 PPT 交付]] |
 | 2026-10-19 | ui | - | archived | ludian-reading-panel-spacing | [[日志/2026-10-19-Ludian全应用留白与手机备份排版修复.md|Ludian 全应用留白与手机备份排版修复]] |
