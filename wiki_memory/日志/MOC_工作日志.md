@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-20 | maintenance | - | archived | competition-team-chapter-deck | [[日志/2026-10-20-Ludian队名与章节过渡页完善.md|Ludian 队名与章节过渡页完善]] |
 | 2026-10-20 | maintenance | - | archived | education-style-mobile-presentation | [[日志/2026-10-20-Ludian简约教育风答辩优化.md|Ludian 简约教育风答辩优化]] |
 | 2026-10-20 | maintenance | - | archived | competition-mobile-poster | [[日志/2026-10-20-Ludian简约教育风参赛海报.md|Ludian 简约教育风参赛海报]] |
 | 2026-10-20 | maintenance | - | archived | competition-presentation-redesign | [[日志/2026-10-20-Ludian竞赛答辩目录与视觉重排.md|Ludian 竞赛答辩目录与视觉重排]] |
