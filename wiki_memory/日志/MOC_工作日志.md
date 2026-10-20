@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-10-19
+updated: 2026-10-20
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-20 | maintenance | - | archived | ludian-mobile-competition-presentation | [[日志/2026-10-20-Ludian移动应用竞赛答辩PPT交付.md|Ludian 移动应用竞赛答辩 PPT 交付]] |
 | 2026-10-19 | ui | - | archived | ludian-reading-panel-spacing | [[日志/2026-10-19-Ludian全应用留白与手机备份排版修复.md|Ludian 全应用留白与手机备份排版修复]] |
 | 2026-10-19 | maintenance | - | archived | ludian-concise-editable-project-document | [[日志/2026-10-19-Ludian作品说明精简交付.md|Ludian 作品说明精简交付]] |
 | 2026-10-19 | maintenance | 整理可二次修改的作品材料，覆盖明确目标用户、功能模块、业务流程、运行版本、系统说明、功能演示、界面截图、技术架构和测试说明。 | archived | ludian-editable-wps-project-submission | [[日志/2026-10-19-Ludian作品说明与可编辑WPS交付.md|Ludian 作品说明与可编辑 WPS 交付]] |
