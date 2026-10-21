@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-21 | maintenance | - | archived | workspace-cleanup-and-startup-validation | [[日志/2026-10-21-Ludian远程核对与本地目录清理.md|Ludian 远程核对与本地目录清理]] |
 | 2026-10-21 | maintenance | - | archived | competition-approved-manuscript-template-update | [[日志/2026-10-21-Ludian四章新版文稿与原模板换稿.md|Ludian 四章新版文稿与原模板换稿]] |
 | 2026-10-20 | maintenance | - | archived | competition-team-chapter-deck | [[日志/2026-10-20-Ludian队名与章节过渡页完善.md|Ludian 队名与章节过渡页完善]] |
 | 2026-10-20 | maintenance | - | archived | education-style-mobile-presentation | [[日志/2026-10-20-Ludian简约教育风答辩优化.md|Ludian 简约教育风答辩优化]] |
