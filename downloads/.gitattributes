@@ -1,0 +1,4 @@
+*.exe binary
+*.apk binary
+SHA256SUMS.txt text eol=lf
+release-manifest.json text eol=lf

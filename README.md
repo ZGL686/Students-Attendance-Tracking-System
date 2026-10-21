@@ -6,6 +6,17 @@
 
 保留表格、看板、画廊、列表、日历、保存视图、自定义属性、筛选排序、批量编辑和关联汇总。更名不会改变原数据目录、备份格式或已有记录。
 
+## 下载安装
+
+[最新 Release](https://github.com/ZGL686/Students-Attendance-Tracking-System/releases/latest) · [仓库安装包目录](downloads/v0.5.12/README.md)
+
+| 平台    | 下载                                                                                                                                                                                                                                                                    | 环境                        |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Android | [0.5.12 通用 APK](https://github.com/ZGL686/Students-Attendance-Tracking-System/releases/download/v0.5.12/Ludian-Android-0.5.12-universal.apk)                                                                                                                          | Android 7.0+，ARM64 / ARMv7 |
+| Windows | [0.5.12 EXE](https://github.com/ZGL686/Students-Attendance-Tracking-System/releases/download/v0.5.12/Ludian-Windows-0.5.12-x64.exe) · [完整 ZIP](https://github.com/ZGL686/Students-Attendance-Tracking-System/releases/download/v0.5.12/Ludian-Windows-0.5.12-x64.zip) | Windows 10/11 x64，WebView2 |
+
+公开安装包不含真实学生名单、个人备份或数据库。Release 提供 SHA-256 校验文件；安装及更新说明见 [使用说明](docs/使用说明.md)。
+
 ## 使用
 
 Windows **0.5.12** 发行包可直接打开 `dist/Ludian-latest/Ludian.exe`，或将 `dist/Ludian-latest.zip` 解压后运行。运行环境为 Windows 10/11 x64，需要 Microsoft Edge WebView2 Runtime；实际产物版本及 SHA-256 以 `dist/Ludian-latest/version.json` 为准。

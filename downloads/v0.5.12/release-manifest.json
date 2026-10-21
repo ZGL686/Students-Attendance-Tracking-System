@@ -1,0 +1,45 @@
+{
+  "version": "0.5.12",
+  "releaseTag": "v0.5.12",
+  "applicationIdentifier": "cn.guilu.attendance",
+  "applicationSourceCommit": "9993dcec2d82dd259437a10234bb4b087181f2c3",
+  "sourceSnapshotAtPreparation": "44b48cd4e4b1eb551e1704c3d0ef63f6790c2446",
+  "applicationSourceMatchesMainBeforePublication": true,
+  "programsRecompiledThisPublication": false,
+  "privateInitialDataIncluded": false,
+  "windowsZipRepackagedWithCurrentInstructions": true,
+  "windows": {
+    "architecture": "x64",
+    "minimumWindows": "10",
+    "requiresWebView2": true
+  },
+  "android": {
+    "versionCode": 5012,
+    "minimumAndroid": "7.0",
+    "targetSdk": 36,
+    "architectures": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ],
+    "certificateSha256": "79ca1a91c812011a323d5f2fcddd7ab464bf24f66d0f4da7d1b6a65fd1fe3335",
+    "nativeDeviceTested": false,
+    "tableImportOnly": true
+  },
+  "assets": [
+    {
+      "name": "Ludian-Windows-0.5.12-x64.exe",
+      "bytes": 69450752,
+      "sha256": "b5cb1b3f95d923b453982b4723000d5ca61edf273cb80e5a82c32f9798602858"
+    },
+    {
+      "name": "Ludian-Android-0.5.12-universal.apk",
+      "bytes": 97561864,
+      "sha256": "012e54e9901649e6dbb68273a10edc06680d4b9e3d9cfef10627cee68022bb17"
+    },
+    {
+      "name": "Ludian-Windows-0.5.12-x64.zip",
+      "bytes": 60995640,
+      "sha256": "9d0fb6808a471f44bcaae692ee78fa83747feea81971bc98a4ccf7c2bf74d57d"
+    }
+  ]
+}

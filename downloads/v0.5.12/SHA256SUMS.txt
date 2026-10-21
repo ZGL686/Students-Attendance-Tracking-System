@@ -1,0 +1,4 @@
+b5cb1b3f95d923b453982b4723000d5ca61edf273cb80e5a82c32f9798602858  Ludian-Windows-0.5.12-x64.exe
+012e54e9901649e6dbb68273a10edc06680d4b9e3d9cfef10627cee68022bb17  Ludian-Android-0.5.12-universal.apk
+9d0fb6808a471f44bcaae692ee78fa83747feea81971bc98a4ccf7c2bf74d57d  Ludian-Windows-0.5.12-x64.zip
+217009b568a198dbaadcbfa887ff8fe97ae7e9204469fa8796b0106d64aa4c8a  release-manifest.json
