@@ -19,6 +19,7 @@ supersedes: null
 | 2026-10-21 | maintenance | - | archived | competition-approved-manuscript-template-update | [[日志/2026-10-21-Ludian四章新版文稿与原模板换稿.md|Ludian 四章新版文稿与原模板换稿]] |
 | 2026-10-21 | maintenance | - | archived | public-installers-and-github-release | [[日志/2026-10-21-Ludian公开安装包与GitHubRelease发布.md|Ludian 公开安装包与 GitHub Release 发布]] |
 | 2026-10-21 | maintenance | - | archived | competition-ai-use-statement | [[日志/2026-10-21-Ludian人工智能工具使用说明交付.md|Ludian 人工智能工具使用说明交付]] |
+| 2026-10-21 | maintenance | - | archived | competition-ai-statement-concise | [[日志/2026-10-21-LudianAI使用说明一页精简.md|Ludian AI使用说明一页精简]] |
 | 2026-10-20 | maintenance | - | archived | competition-team-chapter-deck | [[日志/2026-10-20-Ludian队名与章节过渡页完善.md|Ludian 队名与章节过渡页完善]] |
 | 2026-10-20 | maintenance | - | archived | education-style-mobile-presentation | [[日志/2026-10-20-Ludian简约教育风答辩优化.md|Ludian 简约教育风答辩优化]] |
 | 2026-10-20 | maintenance | - | archived | competition-mobile-poster | [[日志/2026-10-20-Ludian简约教育风参赛海报.md|Ludian 简约教育风参赛海报]] |
