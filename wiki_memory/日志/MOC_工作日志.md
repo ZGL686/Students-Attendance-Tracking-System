@@ -3,7 +3,7 @@ type: moc
 status: active
 kind: process
 importance: high
-updated: 2026-10-21
+updated: 2026-10-22
 topic: work-log-index
 source_logs: []
 supersedes: null
@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-22 | maintenance | - | archived | competition-one-page-work-introduction | [[日志/2026-10-22-Ludian一页作品介绍文档交付.md|Ludian 一页作品介绍文档交付]] |
 | 2026-10-21 | maintenance | - | archived | workspace-cleanup-and-startup-validation | [[日志/2026-10-21-Ludian远程核对与本地目录清理.md|Ludian 远程核对与本地目录清理]] |
 | 2026-10-21 | maintenance | - | archived | competition-approved-manuscript-template-update | [[日志/2026-10-21-Ludian四章新版文稿与原模板换稿.md|Ludian 四章新版文稿与原模板换稿]] |
 | 2026-10-21 | maintenance | - | archived | public-installers-and-github-release | [[日志/2026-10-21-Ludian公开安装包与GitHubRelease发布.md|Ludian 公开安装包与 GitHub Release 发布]] |
