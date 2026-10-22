@@ -15,6 +15,7 @@ supersedes: null
 
 | 时间 | 类型 | 目标 | 状态 | 主题 | 日志 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-22 | maintenance | - | archived | competition-deck-supplied-phone-screenshots | [[日志/2026-10-22-Ludian答辩配图替换为用户手机截图.md|Ludian 答辩配图替换为用户手机截图]] |
 | 2026-10-22 | maintenance | - | archived | competition-deck-innovation-method-contribution | [[日志/2026-10-22-Ludian参赛答辩图文与原创贡献修订.md|Ludian 参赛答辩图文与原创贡献修订]] |
 | 2026-10-22 | maintenance | - | archived | competition-introduction-six-aspects | [[日志/2026-10-22-Ludian作品介绍六项内容补齐.md|Ludian 作品介绍六项内容补齐]] |
 | 2026-10-22 | maintenance | - | archived | competition-one-page-work-introduction | [[日志/2026-10-22-Ludian一页作品介绍文档交付.md|Ludian 一页作品介绍文档交付]] |
